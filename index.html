@@ -935,6 +935,9 @@
       <div class="nav-item" onclick="showPage('bitcoin', this)">
         <span class="nav-icon">₿</span> Bitcoin
       </div>
+      <div class="nav-item" onclick="showPage('carteira', this)">
+        <span class="nav-icon">◉</span> A Minha Carteira
+      </div>
       <div class="nav-section">Conta</div>
       <div class="nav-item" onclick="showPage('settings', this)">
         <span class="nav-icon">◌</span> Configurações
@@ -1531,6 +1534,169 @@
         </div>
       </div>
 
+      <!-- ===== CARTEIRA ===== -->
+      <div class="page" id="page-carteira">
+
+        <!-- Header row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">Adiciona as tuas posições e deixa o AI analisar</div>
+          </div>
+          <button onclick="openAddPosition()" style="
+            display:flex;align-items:center;gap:8px;
+            background:var(--gold);border:none;border-radius:8px;
+            padding:10px 18px;color:#000;cursor:pointer;
+            font-family:'DM Mono',monospace;font-size:11px;
+            font-weight:600;letter-spacing:1px;transition:all 0.15s;">
+            + ADICIONAR POSIÇÃO
+          </button>
+        </div>
+
+        <!-- Portfolio summary cards -->
+        <div class="dash-grid" style="margin-bottom:20px;" id="carteiraMetrics">
+          <div class="metric-card gold">
+            <div class="metric-label">Valor Total</div>
+            <div class="metric-value" id="cTotalVal">€0</div>
+            <div class="metric-change" id="cTotalPnl" style="color:var(--text3)">Sem posições</div>
+          </div>
+          <div class="metric-card green">
+            <div class="metric-label">Ganho / Perda Total</div>
+            <div class="metric-value" id="cTotalGain">€0</div>
+            <div class="metric-change" id="cTotalGainPct" style="color:var(--text3)">—</div>
+          </div>
+          <div class="metric-card btc">
+            <div class="metric-label">Nº de Posições</div>
+            <div class="metric-value" id="cNumPos">0</div>
+            <div class="metric-change" style="color:var(--text3)" id="cBestPos">—</div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-bottom:20px;align-items:start;">
+
+          <!-- Positions list -->
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+              <div class="card-title" style="margin:0;">As Minhas Posições</div>
+              <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="posCount">0 ETFs</span>
+            </div>
+            <div id="positionsList" style="min-height:120px;">
+              <div style="padding:32px;text-align:center;color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;line-height:1.8;">
+                Ainda não tens posições.<br>
+                Clica em <span style="color:var(--gold)">+ ADICIONAR POSIÇÃO</span><br>para começar.
+              </div>
+            </div>
+          </div>
+
+          <!-- Allocation donut -->
+          <div class="card">
+            <div class="card-title">Alocação da Carteira</div>
+            <div id="carteiraAlloc">
+              <div style="text-align:center;padding:24px;color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;">
+                Adiciona posições para ver a alocação
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Analysis -->
+        <div class="card" id="carteiraAICard">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <div class="card-title" style="margin:0;">Análise AI da Carteira</div>
+              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:3px;" id="carteiraAITime">Aguarda posições para analisar</div>
+            </div>
+            <button id="analyseBtn" onclick="analyseCarteira()" disabled style="
+              display:flex;align-items:center;gap:6px;
+              background:var(--surface2);border:1px solid var(--border2);
+              color:var(--text3);border-radius:8px;padding:8px 16px;
+              font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;
+              cursor:not-allowed;transition:all 0.15s;" id="analyseBtnEl">
+              🤖 <span id="analyseLabel">ANALISAR CARTEIRA</span>
+            </button>
+          </div>
+
+          <div id="carteiraAIResult">
+            <div style="padding:20px;text-align:center;background:var(--surface2);border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);line-height:1.8;">
+              Adiciona pelo menos uma posição e clica em<br>
+              <strong style="color:var(--gold)">🤖 ANALISAR CARTEIRA</strong><br>
+              para receber recomendações personalizadas.
+            </div>
+          </div>
+
+          <!-- Portfolio chat -->
+          <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">PERGUNTAS SOBRE A TUA CARTEIRA</div>
+            <div id="carteiraChatMsgs" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;max-height:300px;overflow-y:auto;"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;" id="carteiraQuickBtns">
+              <button class="quick-btn" onclick="sendCarteiraQ('Devo manter ou vender as minhas posições atuais?')">🤔 Manter ou vender?</button>
+              <button class="quick-btn" onclick="sendCarteiraQ('Existe algum ETF melhor para substituir o que tenho?')">🔄 Substituir por melhor?</button>
+              <button class="quick-btn" onclick="sendCarteiraQ('Estou bem diversificado com esta carteira?')">⚖️ Estou diversificado?</button>
+              <button class="quick-btn" onclick="sendCarteiraQ('Qual é o risco da minha carteira atual?')">🎯 Avaliar risco</button>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <textarea id="carteiraInput" class="chat-input" placeholder="Pergunta sobre a tua carteira..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCarteiraMsg();}" oninput="autoResize(this)" style="flex:1;"></textarea>
+              <button class="send-btn" onclick="sendCarteiraMsg()">➤</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /page-carteira -->
+
+      <!-- ADD POSITION MODAL -->
+      <div id="addModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+        <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:360px;max-width:95vw;animation:loginFadeIn 0.25s ease;box-shadow:0 24px 60px rgba(0,0,0,0.6);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;">ADICIONAR POSIÇÃO</div>
+            <button onclick="closeModal()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;">×</button>
+          </div>
+
+          <div class="login-field">
+            <label class="login-label">ETF / Ativo</label>
+            <select id="mEtf" class="login-input" style="cursor:pointer;">
+              <option value="">— Seleciona —</option>
+              <option value="VWCE">VWCE — Vanguard All-World</option>
+              <option value="CSPX">CSPX — iShares S&P 500</option>
+              <option value="IWDA">IWDA — iShares MSCI World</option>
+              <option value="EQQQ">EQQQ — Invesco NASDAQ-100</option>
+              <option value="AGGH">AGGH — iShares Global Bond</option>
+              <option value="IBTC">IBTC — iShares Bitcoin ETP</option>
+              <option value="BTC">BTC — Bitcoin (direto)</option>
+              <option value="OUTRO">Outro (manual)</option>
+            </select>
+          </div>
+          <div id="mOutroWrap" style="display:none;" class="login-field">
+            <label class="login-label">Nome do Ativo</label>
+            <input id="mOutroNome" class="login-input" placeholder="ex: VOO, QQQ, AAPL..." />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="login-field">
+              <label class="login-label">Nº de Unidades</label>
+              <input id="mUnits" class="login-input" type="number" min="0" step="0.001" placeholder="ex: 5.5" />
+            </div>
+            <div class="login-field">
+              <label class="login-label">Preço Médio (€)</label>
+              <input id="mAvgPrice" class="login-input" type="number" min="0" step="0.01" placeholder="ex: 112.50" />
+            </div>
+          </div>
+          <div class="login-field">
+            <label class="login-label">Plataforma</label>
+            <select id="mPlatform" class="login-input" style="cursor:pointer;">
+              <option>Revolut</option>
+              <option>Trade Republic</option>
+              <option>DEGIRO</option>
+              <option>XTB</option>
+              <option>Outra</option>
+            </select>
+          </div>
+          <div id="mError" style="display:none;color:var(--red);font-family:'DM Mono',monospace;font-size:10px;margin-bottom:10px;">Preenche todos os campos obrigatórios.</div>
+          <button onclick="savePosition()" style="
+            width:100%;padding:12px;background:var(--gold);border:none;
+            border-radius:8px;color:#000;font-family:'DM Mono',monospace;
+            font-size:11px;font-weight:600;letter-spacing:2px;cursor:pointer;
+            transition:all 0.15s;">GUARDAR POSIÇÃO</button>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -1559,6 +1725,7 @@ function showPage(id, el) {
     agent: 'Agente AI',
     etfs: 'ETFs',
     bitcoin: 'Bitcoin',
+    carteira: 'A Minha Carteira',
     settings: 'Configurações'
   };
   document.getElementById('pageTitle').textContent = titles[id] || id;
@@ -1931,6 +2098,297 @@ function selectETF(ticker, el) {
   document.getElementById('dInsightText').textContent = d.insightText;
 }
 
+// ── CARTEIRA ──
+var positions = JSON.parse(localStorage.getItem('vault_positions') || '[]');
+var carteiraChatHistory = [];
+
+// Current prices (approx, updated by AI)
+var CURRENT_PRICES = {
+  VWCE: 118.90, CSPX: 524.20, IWDA: 103.40,
+  EQQQ: 402.80, AGGH: 4.82, IBTC: 42.10, BTC: 77800
+};
+
+function savePositions() {
+  localStorage.setItem('vault_positions', JSON.stringify(positions));
+}
+
+function openAddPosition() {
+  document.getElementById('addModal').style.display = 'flex';
+  document.getElementById('mEtf').value = '';
+  document.getElementById('mUnits').value = '';
+  document.getElementById('mAvgPrice').value = '';
+  document.getElementById('mError').style.display = 'none';
+  document.getElementById('mOutroWrap').style.display = 'none';
+  document.getElementById('mEtf').onchange = function() {
+    document.getElementById('mOutroWrap').style.display = this.value === 'OUTRO' ? 'block' : 'none';
+  };
+}
+
+function closeModal() {
+  document.getElementById('addModal').style.display = 'none';
+}
+
+function savePosition() {
+  var etf = document.getElementById('mEtf').value;
+  var units = parseFloat(document.getElementById('mUnits').value);
+  var avgPrice = parseFloat(document.getElementById('mAvgPrice').value);
+  var platform = document.getElementById('mPlatform').value;
+  var outroNome = document.getElementById('mOutroNome').value.trim();
+
+  if (!etf || isNaN(units) || isNaN(avgPrice) || units <= 0 || avgPrice <= 0) {
+    document.getElementById('mError').style.display = 'block';
+    return;
+  }
+  var ticker = etf === 'OUTRO' ? (outroNome || 'OUTRO') : etf;
+  var existing = positions.findIndex(function(p) { return p.ticker === ticker && p.platform === platform; });
+  if (existing >= 0) {
+    // Average down/up
+    var old = positions[existing];
+    var totalUnits = old.units + units;
+    var newAvg = ((old.units * old.avgPrice) + (units * avgPrice)) / totalUnits;
+    positions[existing].units = totalUnits;
+    positions[existing].avgPrice = newAvg;
+  } else {
+    positions.push({ ticker: ticker, units: units, avgPrice: avgPrice, platform: platform, addedAt: new Date().toISOString() });
+  }
+  savePositions();
+  closeModal();
+  renderCarteira();
+  enableAnalyseBtn();
+}
+
+function deletePosition(idx) {
+  if (confirm('Remover esta posição?')) {
+    positions.splice(idx, 1);
+    savePositions();
+    renderCarteira();
+    if (positions.length === 0) disableAnalyseBtn();
+  }
+}
+
+function enableAnalyseBtn() {
+  var btn = document.getElementById('analyseBtn');
+  if (!btn) return;
+  btn.disabled = false;
+  btn.style.background = 'var(--gold-dim)';
+  btn.style.borderColor = 'rgba(201,168,76,0.3)';
+  btn.style.color = 'var(--gold)';
+  btn.style.cursor = 'pointer';
+}
+function disableAnalyseBtn() {
+  var btn = document.getElementById('analyseBtn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.style.background = 'var(--surface2)';
+  btn.style.borderColor = 'var(--border2)';
+  btn.style.color = 'var(--text3)';
+  btn.style.cursor = 'not-allowed';
+}
+
+function renderCarteira() {
+  var list = document.getElementById('positionsList');
+  var allocDiv = document.getElementById('carteiraAlloc');
+  var posCount = document.getElementById('posCount');
+
+  if (positions.length === 0) {
+    list.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:11px;line-height:1.8;">Ainda não tens posições.<br>Clica em <span style="color:var(--gold)">+ ADICIONAR POSIÇÃO</span><br>para começar.</div>';
+    allocDiv.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:11px;">Adiciona posições para ver a alocação</div>';
+    posCount.textContent = '0 ETFs';
+    document.getElementById('cTotalVal').textContent = '€0';
+    document.getElementById('cTotalGain').textContent = '€0';
+    document.getElementById('cTotalGainPct').textContent = '—';
+    document.getElementById('cTotalPnl').textContent = 'Sem posições';
+    document.getElementById('cNumPos').textContent = '0';
+    document.getElementById('cBestPos').textContent = '—';
+    return;
+  }
+
+  var totalCost = 0, totalVal = 0;
+  var posData = positions.map(function(p) {
+    var curPrice = CURRENT_PRICES[p.ticker] || p.avgPrice;
+    var cost = p.units * p.avgPrice;
+    var val  = p.units * curPrice;
+    var gain = val - cost;
+    var gainPct = ((val - cost) / cost) * 100;
+    totalCost += cost;
+    totalVal  += val;
+    return { ticker: p.ticker, units: p.units, avgPrice: p.avgPrice, platform: p.platform, curPrice: curPrice, cost: cost, val: val, gain: gain, gainPct: gainPct };
+  });
+
+  var totalGain = totalVal - totalCost;
+  var totalGainPct = totalCost > 0 ? ((totalGain / totalCost) * 100) : 0;
+  var best = posData.reduce(function(a, b) { return a.gainPct > b.gainPct ? a : b; });
+
+  document.getElementById('cTotalVal').textContent = '€' + totalVal.toFixed(0);
+  document.getElementById('cTotalGain').textContent = (totalGain >= 0 ? '+' : '') + '€' + totalGain.toFixed(2);
+  document.getElementById('cTotalGain').style.color = totalGain >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('cTotalGainPct').textContent = (totalGainPct >= 0 ? '▲ +' : '▼ ') + totalGainPct.toFixed(2) + '%';
+  document.getElementById('cTotalGainPct').className = totalGainPct >= 0 ? 'metric-change up' : 'metric-change down';
+  document.getElementById('cTotalPnl').textContent = 'vs. custo €' + totalCost.toFixed(0);
+  document.getElementById('cNumPos').textContent = positions.length;
+  document.getElementById('cBestPos').textContent = '🏆 Melhor: ' + best.ticker + ' ' + (best.gainPct >= 0 ? '+' : '') + best.gainPct.toFixed(1) + '%';
+
+  posCount.textContent = positions.length + ' posição' + (positions.length !== 1 ? 'ões' : '');
+
+  // Positions rows
+  list.innerHTML = posData.map(function(p, i) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);gap:10px;">' +
+      '<div style="flex:1;">' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--gold);">' + p.ticker + '</span>' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:9px;padding:2px 6px;background:var(--surface2);border-radius:4px;color:var(--text3);">' + p.platform + '</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + p.units.toFixed(3) + ' un. · PM: €' + p.avgPrice.toFixed(2) + '</div>' +
+      '</div>' +
+      '<div style="text-align:right;">' +
+        '<div style="font-family:\'DM Serif Display\',serif;font-size:15px;">€' + p.val.toFixed(2) + '</div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:' + (p.gain >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
+          (p.gain >= 0 ? '+' : '') + '€' + p.gain.toFixed(2) + ' (' + (p.gainPct >= 0 ? '+' : '') + p.gainPct.toFixed(1) + '%)' +
+        '</div>' +
+      '</div>' +
+      '<button onclick="deletePosition(' + i + ')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px;transition:color 0.15s;" onmouseover="this.style.color=\'var(--red)\'" onmouseout="this.style.color=\'var(--text3)\'">✕</button>' +
+    '</div>';
+  }).join('');
+
+  // Allocation bars
+  var colors = ['#c9a84c','#4caf7d','#f7931a','#e05c5c','#9a9890','#5a9dd6'];
+  var allocHtml = '<div style="display:flex;flex-direction:column;gap:8px;">';
+  posData.forEach(function(p, i) {
+    var pct = totalVal > 0 ? (p.val / totalVal * 100) : 0;
+    var col = colors[i % colors.length];
+    allocHtml += '<div style="display:flex;align-items:center;gap:10px;">' +
+      '<div style="width:50px;font-family:\'DM Mono\',monospace;font-size:11px;color:' + col + ';">' + p.ticker + '</div>' +
+      '<div style="flex:1;background:var(--surface2);border-radius:3px;height:8px;overflow:hidden;">' +
+        '<div style="width:' + pct.toFixed(1) + '%;background:' + col + ';height:100%;border-radius:3px;transition:width 0.6s ease;"></div>' +
+      '</div>' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text2);width:38px;text-align:right;">' + pct.toFixed(0) + '%</div>' +
+    '</div>';
+  });
+  allocHtml += '</div>';
+  allocDiv.innerHTML = allocHtml;
+}
+
+async function analyseCarteira() {
+  if (positions.length === 0) return;
+  var btn = document.getElementById('analyseBtn');
+  var label = document.getElementById('analyseLabel');
+  var result = document.getElementById('carteiraAIResult');
+  var timeEl = document.getElementById('carteiraAITime');
+
+  btn.disabled = true;
+  label.textContent = 'A ANALISAR...';
+  result.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    '<div class="insight-skeleton"></div><div class="insight-skeleton"></div><div class="insight-skeleton"></div></div>';
+
+  var posStr = positions.map(function(p) {
+    var cur = CURRENT_PRICES[p.ticker] || p.avgPrice;
+    var gain = ((cur - p.avgPrice) / p.avgPrice * 100).toFixed(1);
+    return p.ticker + ': ' + p.units.toFixed(3) + ' un., PM €' + p.avgPrice.toFixed(2) + ', atual ~€' + cur.toFixed(2) + ' (' + (gain >= 0 ? '+' : '') + gain + '%), plataforma: ' + p.platform;
+  }).join('\n');
+
+  var prompt = 'És o VAULT, advisor privado de um investidor português. Analisa esta carteira real e responde em português de Portugal.\n\nCARTEIRA ATUAL:\n' + posStr + '\n\nCom base nos dados atuais de mercado (pesquisa web se necessário), dá uma análise detalhada:\n1. Para cada posição: MANTER, VENDER ou REFORÇAR — com justificação\n2. Existe algum ETF melhor para substituir alguma posição?\n3. A carteira está bem diversificada?\n4. Qual o risco global?\n5. Recomendação concreta de ação para esta semana\n\nSê direto, usa dados reais, menciona que é análise educativa.';
+
+  carteiraChatHistory = [{ role: 'user', content: prompt }];
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: carteiraChatHistory
+      })
+    });
+    var data = await response.json();
+    var text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    carteiraChatHistory.push({ role: 'assistant', content: text });
+
+    var formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    result.innerHTML = '<div style="background:var(--surface2);border-radius:8px;padding:16px;font-size:13px;line-height:1.7;color:var(--text2);">' + formatted + '</div>';
+    var now = new Date();
+    timeEl.textContent = 'Analisado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    result.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro</div><div class="insight-text">Não foi possível analisar. Tenta novamente.</div></div>';
+  }
+
+  label.textContent = 'ANALISAR CARTEIRA';
+  btn.disabled = false;
+}
+
+async function sendCarteiraMsg() {
+  var input = document.getElementById('carteiraInput');
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = ''; input.style.height = 'auto';
+  sendCarteiraQ(msg);
+}
+
+async function sendCarteiraQ(msg) {
+  var msgs = document.getElementById('carteiraChatMsgs');
+
+  // Add user bubble
+  var userDiv = document.createElement('div');
+  userDiv.className = 'msg user';
+  userDiv.innerHTML = '<div class="msg-avatar user">A</div><div><div class="msg-bubble">' + msg + '</div></div>';
+  msgs.appendChild(userDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Typing
+  var typDiv = document.createElement('div');
+  typDiv.className = 'msg';
+  typDiv.innerHTML = '<div class="msg-avatar ai">◉</div><div class="msg-bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
+  msgs.appendChild(typDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  var posStr = positions.length > 0 ? positions.map(function(p) {
+    return p.ticker + ': ' + p.units.toFixed(3) + ' un., PM €' + p.avgPrice.toFixed(2) + ', plataforma: ' + p.platform;
+  }).join('; ') : 'Sem posições';
+
+  var contextMsg = 'Contexto da carteira do utilizador: ' + posStr + '\n\nPergunta: ' + msg;
+
+  if (carteiraChatHistory.length === 0) {
+    carteiraChatHistory.push({ role: 'user', content: contextMsg });
+  } else {
+    carteiraChatHistory.push({ role: 'user', content: msg });
+  }
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        system: 'És o VAULT, advisor privado de um investidor português. Respondes sempre em português de Portugal. Sê direto e concreto. Análises são educativas, não aconselhamento financeiro regulado.',
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: carteiraChatHistory
+      })
+    });
+    var data = await response.json();
+    var text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    carteiraChatHistory.push({ role: 'assistant', content: text });
+    msgs.removeChild(typDiv);
+    var aiDiv = document.createElement('div');
+    aiDiv.className = 'msg';
+    var formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    aiDiv.innerHTML = '<div class="msg-avatar ai">◉</div><div><div class="msg-bubble">' + formatted + '</div></div>';
+    msgs.appendChild(aiDiv);
+    msgs.scrollTop = msgs.scrollHeight;
+  } catch(e) {
+    msgs.removeChild(typDiv);
+    var errDiv = document.createElement('div');
+    errDiv.className = 'msg';
+    errDiv.innerHTML = '<div class="msg-avatar ai">◉</div><div><div class="msg-bubble">Erro ao responder. Tenta novamente.</div></div>';
+    msgs.appendChild(errDiv);
+  }
+}
+
+// Init carteira on load
+renderCarteira();
+if (positions.length > 0) enableAnalyseBtn();
+
 // ── INSIGHTS AUTO-REFRESH ──
 var insightsIntervalSecs = 3600; // 1 hora
 var insightsCountdown = insightsIntervalSecs;
@@ -1958,7 +2416,6 @@ function fetchInsights() {
   var container = document.getElementById('insightsContainer');
   var timestamp = document.getElementById('insightsTimestamp');
 
-  // Loading state
   icon.style.animation = 'spin 1s linear infinite';
   label.textContent = 'A ANALISAR...';
   btn.disabled = true;
@@ -1969,54 +2426,87 @@ function fetchInsights() {
     '<div class="insight-skeleton"></div>' +
     '</div>';
 
-  fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages: [{ role: 'user', content: INSIGHTS_PROMPT }]
+  // Use multi-turn to handle web_search tool_use blocks properly
+  var messages = [{ role: 'user', content: INSIGHTS_PROMPT }];
+
+  function doRequest(msgs) {
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: msgs
+      })
     })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    var raw = data.content
-      .filter(function(b) { return b.type === 'text'; })
-      .map(function(b) { return b.text; })
-      .join('');
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      // Check for API error
+      if (data.error) throw new Error(data.error.message || 'API error');
 
-    // Strip markdown code fences if present
-    raw = raw.replace(/```json|```/g, '').trim();
+      var content = data.content || [];
 
-    var parsed;
-    try {
-      // Find JSON object in response
-      var match = raw.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(match ? match[0] : raw);
-    } catch(e) {
-      throw new Error('JSON inválido');
-    }
+      // Extract any text blocks
+      var textBlocks = content.filter(function(b) { return b.type === 'text'; });
 
-    var html = '';
-    parsed.insights.forEach(function(ins) {
-      html += '<div class="insight ' + ins.type + '" style="animation:fadeUp 0.4s ease;">' +
-        '<div class="insight-header">' + ins.header + '</div>' +
-        '<div class="insight-text">' + ins.text + '</div>' +
-        '</div>';
+      // If stop_reason is tool_use, we need to continue the conversation
+      if (data.stop_reason === 'tool_use') {
+        // Build tool results for all tool_use blocks
+        var toolResults = content
+          .filter(function(b) { return b.type === 'tool_use'; })
+          .map(function(b) { return { type: 'tool_result', tool_use_id: b.id, content: '' }; });
+
+        var newMsgs = msgs.concat([
+          { role: 'assistant', content: content },
+          { role: 'user', content: toolResults }
+        ]);
+        return doRequest(newMsgs);
+      }
+
+      // We have end_turn — extract text
+      var raw = textBlocks.map(function(b) { return b.text; }).join('');
+      if (!raw.trim()) throw new Error('Resposta vazia da API');
+
+      raw = raw.replace(/```json|```/g, '').trim();
+
+      var parsed;
+      try {
+        var match = raw.match(/\{[\s\S]*\}/);
+        parsed = JSON.parse(match ? match[0] : raw);
+      } catch(e) {
+        // If JSON parse fails, show raw text as a single insight
+        var html = '<div class="insight neutral" style="animation:fadeUp 0.4s ease;">' +
+          '<div class="insight-header">◎ Análise do Mercado</div>' +
+          '<div class="insight-text">' + raw.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') + '</div>' +
+          '</div>';
+        container.innerHTML = html;
+        var now = new Date();
+        timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'}) + ' · Próxima em 60 min';
+        resetCountdown();
+        return;
+      }
+
+      var html = '';
+      parsed.insights.forEach(function(ins) {
+        html += '<div class="insight ' + ins.type + '" style="animation:fadeUp 0.4s ease;">' +
+          '<div class="insight-header">' + ins.header + '</div>' +
+          '<div class="insight-text">' + ins.text + '</div>' +
+          '</div>';
+      });
+      container.innerHTML = html;
+
+      var now = new Date();
+      timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'}) + ' · Próxima em 60 min';
+      resetCountdown();
     });
-    container.innerHTML = html;
+  }
 
-    // Update timestamp
-    var now = new Date();
-    timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'}) + ' · Próxima em 60 min';
-
-    // Reset countdown
-    resetCountdown();
-  })
+  doRequest(messages)
   .catch(function(err) {
+    console.error('Insights error:', err);
     container.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro ao carregar</div>' +
-      '<div class="insight-text">Não foi possível obter análise ao vivo. Verifica a ligação e tenta novamente.</div></div>';
+      '<div class="insight-text">Erro: ' + (err.message || 'desconhecido') + '. Tenta novamente.</div></div>';
     timestamp.textContent = 'Falhou · Tenta novamente';
   })
   .finally(function() {
@@ -2054,6 +2544,9 @@ setTimeout(function() {
     fetchInsights();
   }
 }, 2000);
+
+// Start countdown bar immediately so it's visible before first fetch
+resetCountdown();
 
 // ── LOGIN ──
 var _loginAttempts = 0;
