@@ -1894,95 +1894,74 @@ function selectETF(ticker, el) {
 }
 
 // ── LOGIN ──
-(function() {
-  const CORRECT_USER = 'antoniosineiro';
-  const CORRECT_PASS = 'Vault#2026$Inv!';
-  const SESSION_KEY  = 'vault_auth_ok';
-  const MAX_TRIES    = 5;
-  const LOCK_SECS    = 60;
+var _loginAttempts = 0;
+var _loginLocked = false;
+var _loginInterval = null;
 
-  let attempts = 0;
-  let locked   = false;
-  let lockInterval = null;
+// Check session
+if (sessionStorage.getItem('vault_ok') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+}
 
-  // Already authenticated this session?
-  if (sessionStorage.getItem(SESSION_KEY) === '1') {
-    document.getElementById('loginScreen').classList.add('hidden');
-  }
+function doLogin() {
+  if (_loginLocked) return;
 
-  window.doLogin = function() {
-    if (locked) return;
-    const user = document.getElementById('loginUser').value.trim();
-    const pass = document.getElementById('loginPass').value;
-    const btn  = document.getElementById('loginBtn');
-    const err  = document.getElementById('loginError');
+  var user = document.getElementById('loginUser').value.trim();
+  var pass = document.getElementById('loginPass').value;
+  var btn  = document.getElementById('loginBtn');
+  var err  = document.getElementById('loginError');
 
-    if (user === CORRECT_USER && pass === CORRECT_PASS) {
-      // Success
-      btn.textContent = '✓ A ENTRAR...';
-      btn.style.background = 'var(--green)';
-      err.style.display = 'none';
-      sessionStorage.setItem(SESSION_KEY, '1');
-      setTimeout(() => {
-        document.getElementById('loginScreen').classList.add('hidden');
-        btn.textContent = 'ENTRAR';
-        btn.style.background = '';
-      }, 700);
-    } else {
-      attempts++;
-      err.style.display = 'block';
-      document.getElementById('loginPass').value = '';
+  if (user === 'antoniosineiro' && pass === 'Vault#2026$Inv!') {
+    btn.textContent = '✓ A ENTRAR...';
+    btn.style.background = '#4caf7d';
+    err.style.display = 'none';
+    sessionStorage.setItem('vault_ok', '1');
+    setTimeout(function() {
+      document.getElementById('loginScreen').style.display = 'none';
+    }, 600);
+  } else {
+    _loginAttempts++;
+    err.style.display = 'block';
+    document.getElementById('loginPass').value = '';
 
-      // Shake animation
-      const box = document.querySelector('.login-box');
-      box.style.animation = 'none';
-      box.offsetHeight;
-      box.style.animation = 'shake 0.4s ease';
-
-      const left = MAX_TRIES - attempts;
-      if (left > 0) {
-        document.getElementById('attemptsLabel').textContent =
-          `${left} tentativa${left !== 1 ? 's' : ''} restante${left !== 1 ? 's' : ''}`;
-      }
-
-      if (attempts >= MAX_TRIES) {
-        startLock();
-      }
+    var left = 5 - _loginAttempts;
+    if (left > 0) {
+      document.getElementById('attemptsLabel').textContent = left + ' tentativa(s) restante(s)';
     }
-  };
-
-  function startLock() {
-    locked = true;
-    let secs = LOCK_SECS;
-    const form     = document.getElementById('loginForm');
-    const lockMsg  = document.getElementById('lockedMsg');
-    const timer    = document.getElementById('lockTimer');
-    form.style.display    = 'none';
-    lockMsg.style.display = 'block';
-    timer.textContent     = `Desbloqueio em ${secs}s`;
-
-    lockInterval = setInterval(() => {
-      secs--;
-      timer.textContent = `Desbloqueio em ${secs}s`;
-      if (secs <= 0) {
-        clearInterval(lockInterval);
-        locked   = false;
-        attempts = 0;
-        form.style.display    = 'block';
-        lockMsg.style.display = 'none';
-        document.getElementById('attemptsLabel').textContent = '';
-        document.getElementById('loginError').style.display  = 'none';
-      }
-    }, 1000);
+    if (_loginAttempts >= 5) {
+      _loginLocked = true;
+      var secs = 60;
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('lockedMsg').style.display = 'block';
+      document.getElementById('lockTimer').textContent = 'Desbloqueio em ' + secs + 's';
+      _loginInterval = setInterval(function() {
+        secs--;
+        document.getElementById('lockTimer').textContent = 'Desbloqueio em ' + secs + 's';
+        if (secs <= 0) {
+          clearInterval(_loginInterval);
+          _loginLocked = false;
+          _loginAttempts = 0;
+          document.getElementById('loginForm').style.display = 'block';
+          document.getElementById('lockedMsg').style.display = 'none';
+          document.getElementById('attemptsLabel').textContent = '';
+          document.getElementById('loginError').style.display = 'none';
+        }
+      }, 1000);
+    }
   }
+}
 
-  window.togglePw = function() {
-    const inp = document.getElementById('loginPass');
-    const btn = document.getElementById('eyeBtn');
-    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
-    else                         { inp.type = 'password'; btn.textContent = '👁'; }
-  };
-})();
+function togglePw() {
+  var inp = document.getElementById('loginPass');
+  var btn = document.getElementById('eyeBtn');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    btn.textContent = '👁';
+  }
+}
 
 // Init agent page
 document.getElementById('page-agent').style.display = 'none';
