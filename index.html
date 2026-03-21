@@ -781,6 +781,25 @@
   /* Mini sparkline SVG */
   .sparkline { display: inline-block; vertical-align: middle; }
 
+  /* Skeleton loader */
+  .insight-skeleton {
+    height: 72px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-left: 2px solid var(--border2);
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  @keyframes spin {
+    from { display:inline-block; transform: rotate(0deg); }
+    to   { display:inline-block; transform: rotate(360deg); }
+  }
+  #refreshIcon { display:inline-block; }
+
   /* ── COPY CODES ── */
   .codes-section { margin-top: 14px; }
   .codes-title {
@@ -1014,19 +1033,38 @@
           </div>
         </div>
 
-        <div class="card" style="margin-bottom:20px">
-          <div class="card-title">Insights do Agente AI · Hoje</div>
-          <div class="insight bullish">
-            <div class="insight-header">📈 Oportunidade · ETFs</div>
-            <div class="insight-text">O <strong>VWCE</strong> está a negociar perto do suporte dos 50 dias após a correção de 4%. Nível de entrada interessante para DCA mensal. Expense ratio de 0.22% é competitivo para exposição global.</div>
+        <div class="card" style="margin-bottom:20px" id="insightsCard">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div>
+              <div class="card-title" style="margin:0;">Insights do Agente AI</div>
+              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:4px;" id="insightsTimestamp">A carregar...</div>
+            </div>
+            <button id="refreshBtn" onclick="fetchInsights()" style="
+              display:flex;align-items:center;gap:6px;
+              background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);
+              color:var(--gold);border-radius:8px;padding:7px 14px;
+              font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;
+              cursor:pointer;transition:all 0.15s;">
+              <span id="refreshIcon">🔄</span> <span id="refreshLabel">ATUALIZAR</span>
+            </button>
           </div>
-          <div class="insight neutral">
-            <div class="insight-header">⚡ Atenção · Bitcoin</div>
-            <div class="insight-text"><strong>BTC</strong> consolidando entre $82k–$87k. Fear & Greed Index em 62 (Ganância). Historicamente, consolidações nesta zona duram 2–4 semanas antes de breakout. Manter DCA mas não aumentar posição agora.</div>
+
+          <!-- Countdown bar -->
+          <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:5px;">
+              <span>Próxima atualização automática</span>
+              <span id="countdownLabel">60:00</span>
+            </div>
+            <div style="height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+              <div id="countdownBar" style="height:100%;background:linear-gradient(90deg,var(--gold),var(--green));border-radius:2px;width:100%;transition:width 1s linear;"></div>
+            </div>
           </div>
-          <div class="insight bearish">
-            <div class="insight-header">⚠️ Risco · Macro</div>
-            <div class="insight-text">Fed mantém juros altos — impacto no crescimento tech em Q2. Considerar reduzir exposição a <strong>ETFs tech pesados</strong> (QQQ) e aumentar alocação em <strong>VWCE</strong> para diversificação geográfica.</div>
+
+          <!-- Insights container -->
+          <div id="insightsContainer">
+            <div style="text-align:center;padding:24px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">
+              Clica em <strong style="color:var(--gold)">ATUALIZAR</strong> para gerar análise ao vivo do mercado.
+            </div>
           </div>
         </div>
       </div>
@@ -1893,6 +1931,130 @@ function selectETF(ticker, el) {
   document.getElementById('dInsightText').textContent = d.insightText;
 }
 
+// ── INSIGHTS AUTO-REFRESH ──
+var insightsIntervalSecs = 3600; // 1 hora
+var insightsCountdown = insightsIntervalSecs;
+var insightsCountdownTimer = null;
+var insightsAutoTimer = null;
+
+var INSIGHTS_PROMPT = `És o VAULT, um advisor de investimentos privado para um investidor português.
+Analisa o mercado AGORA com pesquisa web e gera exactamente 3 insights curtos e diretos em português de Portugal.
+
+Formato obrigatório — responde APENAS com este JSON, sem mais nada:
+{
+  "insights": [
+    {"type": "bullish", "header": "📈 Título · Categoria", "text": "Análise concreta em 2-3 frases."},
+    {"type": "neutral",  "header": "⚡ Título · Categoria", "text": "Análise concreta em 2-3 frases."},
+    {"type": "bearish",  "header": "⚠️ Título · Categoria", "text": "Análise concreta em 2-3 frases."}
+  ]
+}
+
+Cobre: ETFs (VWCE, CSPX, IWDA), Bitcoin, e macro/risco. Sê específico com números reais. Não uses markdown, apenas JSON puro.`;
+
+function fetchInsights() {
+  var btn = document.getElementById('refreshBtn');
+  var icon = document.getElementById('refreshIcon');
+  var label = document.getElementById('refreshLabel');
+  var container = document.getElementById('insightsContainer');
+  var timestamp = document.getElementById('insightsTimestamp');
+
+  // Loading state
+  icon.style.animation = 'spin 1s linear infinite';
+  label.textContent = 'A ANALISAR...';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  container.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    '<div class="insight-skeleton"></div>' +
+    '<div class="insight-skeleton"></div>' +
+    '<div class="insight-skeleton"></div>' +
+    '</div>';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: [{ role: 'user', content: INSIGHTS_PROMPT }]
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var raw = data.content
+      .filter(function(b) { return b.type === 'text'; })
+      .map(function(b) { return b.text; })
+      .join('');
+
+    // Strip markdown code fences if present
+    raw = raw.replace(/```json|```/g, '').trim();
+
+    var parsed;
+    try {
+      // Find JSON object in response
+      var match = raw.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(match ? match[0] : raw);
+    } catch(e) {
+      throw new Error('JSON inválido');
+    }
+
+    var html = '';
+    parsed.insights.forEach(function(ins) {
+      html += '<div class="insight ' + ins.type + '" style="animation:fadeUp 0.4s ease;">' +
+        '<div class="insight-header">' + ins.header + '</div>' +
+        '<div class="insight-text">' + ins.text + '</div>' +
+        '</div>';
+    });
+    container.innerHTML = html;
+
+    // Update timestamp
+    var now = new Date();
+    timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'}) + ' · Próxima em 60 min';
+
+    // Reset countdown
+    resetCountdown();
+  })
+  .catch(function(err) {
+    container.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro ao carregar</div>' +
+      '<div class="insight-text">Não foi possível obter análise ao vivo. Verifica a ligação e tenta novamente.</div></div>';
+    timestamp.textContent = 'Falhou · Tenta novamente';
+  })
+  .finally(function() {
+    icon.style.animation = '';
+    label.textContent = 'ATUALIZAR';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  });
+}
+
+function resetCountdown() {
+  insightsCountdown = insightsIntervalSecs;
+  if (insightsCountdownTimer) clearInterval(insightsCountdownTimer);
+  if (insightsAutoTimer) clearTimeout(insightsAutoTimer);
+
+  insightsCountdownTimer = setInterval(function() {
+    insightsCountdown--;
+    var mins = Math.floor(insightsCountdown / 60);
+    var secs = insightsCountdown % 60;
+    var label = document.getElementById('countdownLabel');
+    var bar   = document.getElementById('countdownBar');
+    if (label) label.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+    if (bar)   bar.style.width = ((insightsCountdown / insightsIntervalSecs) * 100) + '%';
+
+    if (insightsCountdown <= 0) {
+      clearInterval(insightsCountdownTimer);
+      fetchInsights();
+    }
+  }, 1000);
+}
+
+// Auto-fetch on first load after login (2s delay)
+setTimeout(function() {
+  if (sessionStorage.getItem('vault_ok') === '1' || document.getElementById('loginScreen').style.display === 'none') {
+    fetchInsights();
+  }
+}, 2000);
+
 // ── LOGIN ──
 var _loginAttempts = 0;
 var _loginLocked = false;
@@ -1918,6 +2080,7 @@ function doLogin() {
     sessionStorage.setItem('vault_ok', '1');
     setTimeout(function() {
       document.getElementById('loginScreen').style.display = 'none';
+      fetchInsights();
     }, 600);
   } else {
     _loginAttempts++;
