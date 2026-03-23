@@ -1548,7 +1548,7 @@
             </select>
           </div>
         </div>
-      </div>
+      </div><!-- /page-settings -->
 
       <!-- ===== CARTEIRA ===== -->
       <div class="page" id="page-carteira">
@@ -2595,30 +2595,43 @@ async function analyseCarteira() {
   result.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' +
     '<div class="insight-skeleton"></div><div class="insight-skeleton"></div><div class="insight-skeleton"></div></div>';
 
+  // Build compact position string with live prices
   var posStr = positions.map(function(p) {
     var cur = CURRENT_PRICES[p.ticker] || p.avgPrice;
     var gain = ((cur - p.avgPrice) / p.avgPrice * 100).toFixed(1);
-    return p.ticker + '|PM:' + p.avgPrice.toFixed(2) + '|cur:' + cur.toFixed(2) + '|' + (gain>=0?'+':'') + gain + '%|' + p.units.toFixed(2) + 'un';
-  }).join('; ');
+    return p.ticker + ' PM:' + p.avgPrice.toFixed(2) + ' cur:' + cur.toFixed(2) + ' ' + (gain>=0?'+':'') + gain + '%';
+  }).join(' | ');
 
-  var prompt = 'Advisor PT. Carteira: ' + posStr + '. Responde em PT com: 1)Cada posição: MANTER🟢/REFORÇAR🔵/VENDER🔴 + motivo curto 2)Melhor alternativa? 3)Diversificação ok? 4)Ação esta semana. Usa dados reais. Análise educativa.';
+  var prompt = 'Sou investidor PT. Carteira: ' + posStr + '. Para cada posição diz MANTER🟢 REFORÇAR🔵 ou VENDER🔴 com motivo curto. Depois: diversificação ok? ação esta semana? Responde em PT, máx 300 palavras.';
 
   try {
-    var text = await claudeMultiTurn([{ role: 'user', content: prompt }], 800);
+    // Simple single request — NO web_search to avoid token accumulation
+    var response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        system: 'És o VAULT, advisor privado de investimentos para Portugal. Análises educativas, não aconselhamento financeiro regulado. Responde sempre em português de Portugal.',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    var data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    var text = data.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
     carteiraChatHistory = [
       { role: 'user', content: prompt },
       { role: 'assistant', content: text }
     ];
     var formatted = text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/🟢|🔵|🔴/g, function(m){ return '<span style="font-size:14px;">'+m+'</span>'; })
-      .replace(/\n\n/g, '</p><p style="margin-top:10px;">')
+      .replace(/\n\n/g, '</p><p style="margin-top:8px;">')
       .replace(/\n/g, '<br>');
     result.innerHTML = '<div style="background:var(--surface2);border-radius:8px;padding:16px;font-size:13px;line-height:1.7;color:var(--text2);"><p>' + formatted + '</p></div>';
     var now = new Date();
     timeEl.textContent = 'Analisado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
   } catch(e) {
-    result.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro na análise</div><div class="insight-text">Erro: ' + (e.message||'desconhecido') + '. Verifica o Worker e tenta novamente.</div></div>';
+    result.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro na análise</div><div class="insight-text">' + (e.message||'Erro desconhecido') + '</div></div>';
   }
 
   label.textContent = 'ANALISAR CARTEIRA';
@@ -2650,20 +2663,32 @@ async function sendCarteiraQ(msg) {
 
   var posStr = positions.length > 0 ? positions.map(function(p) {
     var cur = CURRENT_PRICES[p.ticker] || p.avgPrice;
-    return p.ticker + ':PM' + p.avgPrice.toFixed(2) + '/cur' + cur.toFixed(2) + '/' + p.units.toFixed(2) + 'un';
+    return p.ticker + ':PM' + p.avgPrice.toFixed(2) + '/cur' + cur.toFixed(2);
   }).join(',') : 'sem posições';
 
-  // Build messages — include previous chat context
-  var allMsgs = carteiraChatHistory.slice();
-  if (allMsgs.length === 0) {
-    allMsgs.push({ role: 'user', content: 'Carteira PT: ' + posStr + '. ' + msg });
-  } else {
-    allMsgs.push({ role: 'user', content: msg });
-  }
+  // Keep only last 2 exchanges to limit tokens
+  var recentHistory = carteiraChatHistory.slice(-4);
+  var allMsgs = recentHistory.length > 0 ? recentHistory.concat([{role:'user', content: msg}])
+    : [{ role: 'user', content: 'Carteira PT: ' + posStr + '. ' + msg }];
 
   try {
-    var text = await claudeMultiTurn(allMsgs, 600);
+    var response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        system: 'VAULT advisor PT. Carteira do utilizador: ' + posStr + '. Responde em PT, direto, máx 150 palavras.',
+        messages: allMsgs
+      })
+    });
+    var data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    var text = data.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
+
+    // Update history keeping it short
     carteiraChatHistory = allMsgs.concat([{ role: 'assistant', content: text }]);
+    if (carteiraChatHistory.length > 6) carteiraChatHistory = carteiraChatHistory.slice(-6);
 
     msgs.removeChild(typDiv);
     var aiDiv = document.createElement('div');
@@ -2676,7 +2701,7 @@ async function sendCarteiraQ(msg) {
     msgs.removeChild(typDiv);
     var errDiv = document.createElement('div');
     errDiv.className = 'msg';
-    errDiv.innerHTML = '<div class="msg-avatar ai">◉</div><div><div class="msg-bubble">Erro: ' + (e.message||'desconhecido') + '. Tenta novamente.</div></div>';
+    errDiv.innerHTML = '<div class="msg-avatar ai">◉</div><div><div class="msg-bubble" style="color:var(--red)">Erro: ' + (e.message||'desconhecido') + '</div></div>';
     msgs.appendChild(errDiv);
   }
 }
@@ -2694,13 +2719,7 @@ var insightsCountdown = insightsIntervalSecs;
 var insightsCountdownTimer = null;
 var insightsAutoTimer = null;
 
-var INSIGHTS_PROMPT = `Advisor PT. Pesquisa mercado agora. Responde APENAS JSON:
-{"insights":[
-{"type":"bullish","header":"📈 Título","text":"2 frases concretas."},
-{"type":"neutral","header":"⚡ Título","text":"2 frases concretas."},
-{"type":"bearish","header":"⚠️ Título","text":"2 frases concretas."}
-]}
-Cobre ETFs(VWCE/CSPX), BTC e macro. Números reais. Sem markdown extra.`;
+var INSIGHTS_PROMPT = 'Analisa o mercado hoje para investidor PT. Responde APENAS JSON sem markdown:\n{"insights":[{"type":"bullish","header":"📈 Título","text":"2 frases."},{"type":"neutral","header":"⚡ Título","text":"2 frases."},{"type":"bearish","header":"⚠️ Título","text":"2 frases."}]}\nCobre ETFs europeus(VWCE/CSPX) e BTC. Em português.';
 
 function fetchInsights() {
   var btn = document.getElementById('refreshBtn');
@@ -2728,69 +2747,37 @@ function fetchInsights() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1200,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        max_tokens: 400,
+        system: 'Advisor investimentos PT. Responde sempre em português de Portugal.',
         messages: msgs
       })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      // Check for API error
       if (data.error) throw new Error(data.error.message || 'API error');
-
       var content = data.content || [];
-
-      // Extract any text blocks
-      var textBlocks = content.filter(function(b) { return b.type === 'text'; });
-
-      // If stop_reason is tool_use, we need to continue the conversation
-      if (data.stop_reason === 'tool_use') {
-        // Build tool results for all tool_use blocks
-        var toolResults = content
-          .filter(function(b) { return b.type === 'tool_use'; })
-          .map(function(b) { return { type: 'tool_result', tool_use_id: b.id, content: '' }; });
-
-        var newMsgs = msgs.concat([
-          { role: 'assistant', content: content },
-          { role: 'user', content: toolResults }
-        ]);
-        return doRequest(newMsgs);
-      }
-
-      // We have end_turn — extract text
-      var raw = textBlocks.map(function(b) { return b.text; }).join('');
-      if (!raw.trim()) throw new Error('Resposta vazia da API');
-
+      var raw = content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
+      if (!raw.trim()) throw new Error('Resposta vazia');
       raw = raw.replace(/```json|```/g, '').trim();
-
       var parsed;
       try {
         var match = raw.match(/\{[\s\S]*\}/);
         parsed = JSON.parse(match ? match[0] : raw);
       } catch(e) {
-        // If JSON parse fails, show raw text as a single insight
-        var html = '<div class="insight neutral" style="animation:fadeUp 0.4s ease;">' +
-          '<div class="insight-header">◎ Análise do Mercado</div>' +
-          '<div class="insight-text">' + raw.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') + '</div>' +
-          '</div>';
-        container.innerHTML = html;
+        // fallback: show as plain insight
+        container.innerHTML = '<div class="insight neutral"><div class="insight-header">◎ Análise do Mercado</div><div class="insight-text">' + raw.replace(/\n/g,'<br>') + '</div></div>';
         var now = new Date();
-        timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'}) + ' · Próxima em 60 min';
+        timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
         resetCountdown();
         return;
       }
-
       var html = '';
       parsed.insights.forEach(function(ins) {
-        html += '<div class="insight ' + ins.type + '" style="animation:fadeUp 0.4s ease;">' +
-          '<div class="insight-header">' + ins.header + '</div>' +
-          '<div class="insight-text">' + ins.text + '</div>' +
-          '</div>';
+        html += '<div class="insight ' + ins.type + '" style="animation:fadeUp 0.4s ease;"><div class="insight-header">' + ins.header + '</div><div class="insight-text">' + ins.text + '</div></div>';
       });
       container.innerHTML = html;
-
       var now = new Date();
-      timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'}) + ' · Próxima em 60 min';
+      timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}) + ' · Próxima em 60 min';
       resetCountdown();
     });
   }
