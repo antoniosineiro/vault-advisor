@@ -938,6 +938,9 @@
       <div class="nav-item" onclick="showPage('carteira', this)">
         <span class="nav-icon">◉</span> A Minha Carteira
       </div>
+      <div class="nav-item" onclick="showPage('virtual', this)">
+        <span class="nav-icon">◈</span> Carteira Virtual AI
+      </div>
       <div class="nav-section">Conta</div>
       <div class="nav-item" onclick="showPage('settings', this)">
         <span class="nav-icon">◌</span> Configurações
@@ -1757,9 +1760,193 @@
         </div>
       </div>
 
+      <!-- ===== VIRTUAL PORTFOLIO PAGE ===== -->
+      <div class="page" id="page-virtual" style="padding-bottom:40px;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">Gerida automaticamente pelo Agente AI · Orçamento inicial €5.000</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="vResetPortfolio()" style="background:var(--red-dim);border:1px solid rgba(224,92,92,0.3);color:var(--red);border-radius:8px;padding:9px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all 0.15s;">↺ REINICIAR</button>
+            <button onclick="vRunAgent()" id="vRunBtn" style="display:flex;align-items:center;gap:6px;background:var(--gold);border:none;border-radius:8px;padding:9px 18px;color:#000;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all 0.15s;">
+              <span id="vRunIcon">▶</span> <span id="vRunLabel">EXECUTAR AGENTE</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="dash-grid" style="margin-bottom:20px;">
+          <div class="metric-card gold">
+            <div class="metric-label">Valor Total</div>
+            <div class="metric-value" id="vTotalVal">€5.000,00</div>
+            <div class="metric-change" id="vTotalChg" style="color:var(--text3)">Portfólio inicial</div>
+          </div>
+          <div class="metric-card green">
+            <div class="metric-label">Ganho / Perda</div>
+            <div class="metric-value" id="vGainVal">€0,00</div>
+            <div class="metric-change" id="vGainPct" style="color:var(--text3)">+0.00%</div>
+          </div>
+          <div class="metric-card btc">
+            <div class="metric-label">Cash Disponível</div>
+            <div class="metric-value" id="vCash">€5.000,00</div>
+            <div class="metric-change" id="vDecisions" style="color:var(--text3)">0 operações</div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-bottom:20px;align-items:start;">
+
+          <!-- Positions -->
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <div class="card-title" style="margin:0;">Posições Abertas</div>
+              <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="vPosCount">0 posições</span>
+            </div>
+            <div id="vPositionsList">
+              <div style="padding:28px;text-align:center;color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;line-height:1.8;">
+                Clica em <span style="color:var(--gold)">▶ EXECUTAR AGENTE</span><br>para o AI gerir a carteira.
+              </div>
+            </div>
+          </div>
+
+          <!-- Allocation -->
+          <div class="card">
+            <div class="card-title">Alocação</div>
+            <div id="vAlloc">
+              <div style="text-align:center;padding:20px;color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;">Sem posições</div>
+            </div>
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+              <div class="card-title">Performance vs Benchmark</div>
+              <div id="vBenchmark" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">A aguardar dados...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agent Log -->
+        <div class="card" style="margin-bottom:20px;overflow:visible;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div>
+              <div class="card-title" style="margin:0;">Diário do Agente AI</div>
+              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:3px;" id="vLastRun">Nunca executado</div>
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;color:var(--text3);" id="vCycle">Ciclo #0</div>
+          </div>
+          <div id="vLog" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;">
+            <div style="text-align:center;padding:20px;color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;">
+              O agente ainda não tomou nenhuma decisão.
+            </div>
+          </div>
+        </div>
+
+        <!-- Trade History -->
+        <div class="card" style="overflow:visible;margin-bottom:40px;">
+          <div class="card-title">Histórico de Operações</div>
+          <div id="vTradeHistory">
+            <div style="text-align:center;padding:16px;color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;">Sem operações</div>
+          </div>
+        </div>
+
+      </div><!-- /page-virtual -->
+
+      <!-- ===== CARTEIRA VIRTUAL AI ===== -->
+      <div class="page" id="page-virtual" style="padding-bottom:60px;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">Orçamento inicial: €5.000 · Gerido pelo Agente AI VAULT</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="resetVirtual()" style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text3);border-radius:8px;padding:9px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all 0.15s;">
+              ↺ REINICIAR
+            </button>
+            <button onclick="runVirtualAI()" id="vRunBtn" style="display:flex;align-items:center;gap:8px;background:var(--gold);border:none;border-radius:8px;padding:9px 18px;color:#000;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;transition:all 0.15s;">
+              🤖 <span id="vRunLabel">EXECUTAR DECISÃO AI</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="dash-grid" style="margin-bottom:20px;">
+          <div class="metric-card gold">
+            <div class="metric-label">Valor Total da Carteira</div>
+            <div class="metric-value" id="vTotalVal">€5.000</div>
+            <div class="metric-change" id="vTotalChg" style="color:var(--text3)">Início: €5.000</div>
+          </div>
+          <div class="metric-card green">
+            <div class="metric-label">Ganho / Perda Total</div>
+            <div class="metric-value" id="vGainVal">€0</div>
+            <div class="metric-change" id="vGainPct" style="color:var(--text3)">+0.00%</div>
+          </div>
+          <div class="metric-card btc">
+            <div class="metric-label">Disponível em Caixa</div>
+            <div class="metric-value" id="vCashVal">€5.000</div>
+            <div class="metric-change" id="vDecisions" style="color:var(--text3)">0 decisões tomadas</div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-bottom:20px;align-items:start;">
+
+          <!-- Positions -->
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <div class="card-title" style="margin:0;">Posições Abertas</div>
+              <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="vPosCount">0 posições</span>
+            </div>
+            <div id="vPositionsList">
+              <div style="padding:24px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);line-height:1.8;">
+                O agente AI ainda não tomou<br>nenhuma decisão de investimento.
+              </div>
+            </div>
+            <!-- Allocation bar -->
+            <div style="padding:12px 16px;border-top:1px solid var(--border);" id="vAllocWrap"></div>
+          </div>
+
+          <!-- AI Decision Log -->
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);">
+              <div class="card-title" style="margin:0;">Registo de Decisões AI</div>
+            </div>
+            <div id="vDecisionLog" style="max-height:380px;overflow-y:auto;padding:0;">
+              <div style="padding:24px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">
+                Clica em "Executar Decisão AI"<br>para o agente analisar e investir.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- AI Reasoning -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div class="card-title" style="margin:0;">Raciocínio do Agente AI</div>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="vLastUpdate">Sem análise ainda</span>
+          </div>
+          <div id="vReasoning" style="font-size:13px;line-height:1.8;color:var(--text2);">
+            <div style="padding:16px;background:var(--surface2);border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:center;">
+              O agente vai explicar aqui o seu raciocínio a cada decisão de investimento.
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance chart placeholder -->
+        <div class="card">
+          <div class="card-title">Histórico de Performance</div>
+          <div id="vPerfChart" style="display:flex;align-items:flex-end;gap:3px;height:80px;margin-top:8px;">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin:auto;">Sem histórico ainda</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="vPerfLabels"></div>
+        </div>
+
+      </div><!-- /page-virtual -->
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
+
+      <!-- ===== VIRTUAL PORTFOLIO PAGE ===== -->
+      <!-- Note: injected via JS into content on showPage -->
 
 <script>
 // ══════════════════════════════════════════════════
@@ -1793,6 +1980,7 @@ function showPage(id, el) {
     etfs: 'ETFs',
     bitcoin: 'Bitcoin',
     carteira: 'A Minha Carteira',
+    virtual: 'Carteira Virtual AI',
     settings: 'Configurações'
   };
   document.getElementById('pageTitle').textContent = titles[id] || id;
@@ -2171,6 +2359,275 @@ var carteiraChatHistory = [];
 var CURRENT_PRICES = {}; // filled by live fetch
 var LIVE_INFO = {};       // name, currency, exchange etc per ticker
 var tickerLookupTimer = null;
+
+// ── CARTEIRA VIRTUAL AI ──
+var VIRTUAL_BUDGET = 5000;
+var vState = JSON.parse(localStorage.getItem('vault_virtual') || 'null') || {
+  cash: 5000,
+  positions: {},   // { ticker: { units, avgPrice, name, currency } }
+  log: [],         // [ { date, action, ticker, units, price, total, reason } ]
+  perfHistory: [], // [ { date, value } ]
+  decisions: 0
+};
+
+function saveVirtual() {
+  localStorage.setItem('vault_virtual', JSON.stringify(vState));
+}
+
+function resetVirtual() {
+  if (!confirm('Reiniciar a carteira virtual? Perdes todo o histórico.')) return;
+  vState = { cash: 5000, positions: {}, log: [], perfHistory: [], decisions: 0 };
+  saveVirtual();
+  renderVirtual();
+  document.getElementById('vReasoning').innerHTML = '<div style="padding:16px;background:var(--surface2);border-radius:8px;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);text-align:center;">Carteira reiniciada. Clica em "Executar Decisão AI" para começar.</div>';
+}
+
+async function runVirtualAI() {
+  var btn = document.getElementById('vRunBtn');
+  var label = document.getElementById('vRunLabel');
+  btn.disabled = true;
+  label.textContent = 'A ANALISAR...';
+
+  // Fetch live prices for current positions
+  var currentPrices = {};
+  var tickers = Object.keys(vState.positions);
+  for (var t of tickers) {
+    var info = await fetchLivePrice(t);
+    if (info) currentPrices[t] = info.price;
+  }
+
+  // Build state summary for AI
+  var posStr = tickers.length > 0 ? tickers.map(function(t) {
+    var p = vState.positions[t];
+    var cur = currentPrices[t] || p.avgPrice;
+    var gain = ((cur - p.avgPrice) / p.avgPrice * 100).toFixed(1);
+    return t + ':' + p.units.toFixed(3) + 'un@PM' + p.avgPrice.toFixed(2) + '/cur' + cur.toFixed(2) + '(' + (gain>=0?'+':'') + gain + '%)';
+  }).join(' | ') : 'Nenhuma';
+
+  var logRecent = vState.log.slice(-5).map(function(l) {
+    return l.action + ' ' + l.ticker + ' ' + l.units + 'un@' + l.price;
+  }).join('; ') || 'Nenhuma';
+
+  var totalValue = vState.cash + tickers.reduce(function(sum, t) {
+    var p = vState.positions[t];
+    return sum + p.units * (currentPrices[t] || p.avgPrice);
+  }, 0);
+
+  var prompt = 'És um gestor de carteira AI autónomo chamado VAULT. Tens €' + vState.cash.toFixed(2) + ' em caixa de um orçamento total de €5000.\n\nPosições atuais: ' + posStr + '\nÚltimas decisões: ' + logRecent + '\nValor total atual: €' + totalValue.toFixed(2) + '\n\nAnalisa o mercado e toma UMA decisão concreta agora. Responde APENAS com JSON:\n{"action":"COMPRAR" ou "VENDER" ou "MANTER","ticker":"XXXXX","units":0.000,"price":0.00,"reasoning":"Explica em 2-3 frases porque tomaste esta decisão com dados de mercado reais.","strategy":"Estratégia geral da carteira em 1 frase."}\n\nRegras: COMPRAR só se cash >= units*price. Tickers UCITS válidos: VWCE,CSPX,IWDA,EQQQ,EXSA,VGWL,IBTC. Se MANTER, units=0 e price=0. Usa preços reais de hoje.';
+
+  try {
+    var response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        system: 'Gestor de carteira AI autónomo. Responde APENAS JSON válido, sem markdown, sem texto extra.',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    var data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    var raw = data.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('').trim();
+    raw = raw.replace(/```json|```/g, '').trim();
+    var match = raw.match(/\{[\s\S]*\}/);
+    var decision = JSON.parse(match ? match[0] : raw);
+
+    // Fetch real price if available
+    var liveInfo = await fetchLivePrice(decision.ticker);
+    var execPrice = liveInfo ? liveInfo.price : decision.price;
+    var execName = liveInfo ? liveInfo.name : decision.ticker;
+    var execCurrency = liveInfo ? liveInfo.currency : 'EUR';
+
+    var now = new Date();
+    var dateStr = now.toLocaleDateString('pt-PT') + ' ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
+
+    if (decision.action === 'COMPRAR' && decision.units > 0 && execPrice > 0) {
+      var total = decision.units * execPrice;
+      if (total > vState.cash) {
+        // Adjust units to what we can afford
+        decision.units = Math.floor((vState.cash * 0.95) / execPrice * 1000) / 1000;
+        total = decision.units * execPrice;
+      }
+      if (decision.units > 0) {
+        vState.cash -= total;
+        if (vState.positions[decision.ticker]) {
+          var old = vState.positions[decision.ticker];
+          var newUnits = old.units + decision.units;
+          vState.positions[decision.ticker].avgPrice = (old.units * old.avgPrice + decision.units * execPrice) / newUnits;
+          vState.positions[decision.ticker].units = newUnits;
+        } else {
+          vState.positions[decision.ticker] = { units: decision.units, avgPrice: execPrice, name: execName, currency: execCurrency };
+        }
+        vState.log.unshift({ date: dateStr, action: '🟢 COMPRA', ticker: decision.ticker, units: decision.units.toFixed(3), price: execPrice.toFixed(2), total: total.toFixed(2), reason: decision.reasoning });
+      }
+    } else if (decision.action === 'VENDER' && decision.units > 0 && vState.positions[decision.ticker]) {
+      var pos = vState.positions[decision.ticker];
+      var sellUnits = Math.min(decision.units, pos.units);
+      var sellTotal = sellUnits * execPrice;
+      vState.cash += sellTotal;
+      pos.units -= sellUnits;
+      if (pos.units < 0.001) delete vState.positions[decision.ticker];
+      vState.log.unshift({ date: dateStr, action: '🔴 VENDA', ticker: decision.ticker, units: sellUnits.toFixed(3), price: execPrice.toFixed(2), total: sellTotal.toFixed(2), reason: decision.reasoning });
+    } else {
+      vState.log.unshift({ date: dateStr, action: '🟡 MANTER', ticker: decision.ticker || '—', units: '—', price: '—', total: '—', reason: decision.reasoning });
+    }
+
+    vState.decisions++;
+
+    // Update prices and record performance
+    var newTotal = vState.cash + Object.keys(vState.positions).reduce(function(sum, t) {
+      var p = vState.positions[t];
+      return sum + p.units * (t === decision.ticker ? execPrice : (currentPrices[t] || p.avgPrice));
+    }, 0);
+    vState.perfHistory.push({ date: now.toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'}), value: parseFloat(newTotal.toFixed(2)) });
+    if (vState.perfHistory.length > 30) vState.perfHistory = vState.perfHistory.slice(-30);
+
+    saveVirtual();
+
+    // Show reasoning
+    var reasonHtml = '<div style="margin-bottom:10px;">' +
+      '<strong style="color:var(--gold);">' + decision.action + ' ' + decision.ticker + '</strong>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);margin-left:10px;">' + dateStr + '</span>' +
+      '</div>' +
+      '<p style="margin-bottom:8px;">' + (decision.reasoning || '') + '</p>' +
+      (decision.strategy ? '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--gold);padding:8px 10px;background:var(--gold-dim);border-radius:6px;margin-top:8px;">Estratégia: ' + decision.strategy + '</div>' : '');
+    document.getElementById('vReasoning').innerHTML = reasonHtml;
+    document.getElementById('vLastUpdate').textContent = 'Última decisão: ' + dateStr;
+
+    renderVirtual();
+
+  } catch(e) {
+    document.getElementById('vReasoning').innerHTML = '<div style="color:var(--red);font-size:12px;">Erro: ' + (e.message||'desconhecido') + '</div>';
+  }
+
+  label.textContent = 'EXECUTAR DECISÃO AI';
+  btn.disabled = false;
+}
+
+function renderVirtual() {
+  // Recalc total with stored prices
+  var tickers = Object.keys(vState.positions);
+  var investedVal = tickers.reduce(function(sum, t) {
+    var p = vState.positions[t];
+    return sum + p.units * p.avgPrice;
+  }, 0);
+  var totalVal = vState.cash + investedVal;
+  var gain = totalVal - VIRTUAL_BUDGET;
+  var gainPct = (gain / VIRTUAL_BUDGET * 100);
+
+  document.getElementById('vTotalVal').textContent = '€' + totalVal.toFixed(2);
+  document.getElementById('vTotalChg').textContent = 'Início: €' + VIRTUAL_BUDGET.toFixed(0);
+  document.getElementById('vGainVal').textContent = (gain >= 0 ? '+' : '') + '€' + gain.toFixed(2);
+  document.getElementById('vGainVal').style.color = gain >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('vGainPct').textContent = (gainPct >= 0 ? '▲ +' : '▼ ') + gainPct.toFixed(2) + '%';
+  document.getElementById('vGainPct').className = 'metric-change ' + (gain >= 0 ? 'up' : 'down');
+  document.getElementById('vCashVal').textContent = '€' + vState.cash.toFixed(2);
+  document.getElementById('vDecisions').textContent = vState.decisions + ' decisão' + (vState.decisions !== 1 ? 'ões' : '') + ' tomada' + (vState.decisions !== 1 ? 's' : '');
+
+  // Positions list
+  var list = document.getElementById('vPositionsList');
+  document.getElementById('vPosCount').textContent = tickers.length + ' posição' + (tickers.length !== 1 ? 'ões' : '');
+  if (tickers.length === 0) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);">Sem posições abertas</div>';
+    document.getElementById('vAllocWrap').innerHTML = '';
+  } else {
+    var colors = ['#c9a84c','#4caf7d','#f7931a','#e05c5c','#9a9890','#5a9dd6'];
+    list.innerHTML = tickers.map(function(t, i) {
+      var p = vState.positions[t];
+      var val = p.units * p.avgPrice;
+      var pct = totalVal > 0 ? (val / totalVal * 100) : 0;
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);gap:8px;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<div style="width:8px;height:8px;border-radius:50%;background:' + colors[i%colors.length] + ';flex-shrink:0;"></div>' +
+            '<span style="font-family:\'DM Mono\',monospace;font-size:13px;color:var(--gold);">' + t + '</span>' +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p.name || t) + '</div>' +
+          '<div style="font-size:11px;color:var(--text3);">' + p.units.toFixed(3) + ' un · PM: ' + p.avgPrice.toFixed(2) + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;">' +
+          '<div style="font-family:\'DM Serif Display\',serif;font-size:14px;">€' + val.toFixed(2) + '</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);">' + pct.toFixed(0) + '% carteira</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    // Alloc bar
+    var allocHtml = '<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-bottom:8px;">';
+    tickers.forEach(function(t, i) {
+      var p = vState.positions[t];
+      var pct = totalVal > 0 ? (p.units * p.avgPrice / totalVal * 100) : 0;
+      allocHtml += '<div style="width:' + pct.toFixed(1) + '%;background:' + colors[i%colors.length] + ';"></div>';
+    });
+    // Cash bar
+    var cashPct = totalVal > 0 ? (vState.cash / totalVal * 100) : 100;
+    allocHtml += '<div style="flex:1;background:var(--border2);"></div></div>';
+    allocHtml += '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+      tickers.map(function(t, i) {
+        return '<span style="font-family:\'DM Mono\',monospace;font-size:9px;color:' + colors[i%colors.length] + ';">■ ' + t + '</span>';
+      }).join('') +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);">■ Cash ' + cashPct.toFixed(0) + '%</span>' +
+      '</div>';
+    document.getElementById('vAllocWrap').innerHTML = allocHtml;
+  }
+
+  // Decision log
+  var logEl = document.getElementById('vDecisionLog');
+  if (vState.log.length === 0) {
+    logEl.innerHTML = '<div style="padding:24px;text-align:center;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);">Sem decisões ainda</div>';
+  } else {
+    logEl.innerHTML = vState.log.slice(0,20).map(function(l) {
+      var isCompra = l.action.includes('COMPRA');
+      var isVenda = l.action.includes('VENDA');
+      var borderColor = isCompra ? 'var(--green)' : isVenda ? 'var(--red)' : 'var(--gold)';
+      return '<div style="padding:10px 14px;border-bottom:1px solid var(--border);border-left:2px solid ' + borderColor + ';">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text);">' + l.action + ' <strong style="color:var(--gold)">' + l.ticker + '</strong></span>' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);">' + l.date + '</span>' +
+        '</div>' +
+        (l.units !== '—' ? '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);">' + l.units + ' un @ €' + l.price + ' = €' + l.total + '</div>' : '') +
+        '<div style="font-size:11px;color:var(--text2);margin-top:4px;">' + (l.reason || '') + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Performance chart
+  renderVirtualChart();
+}
+
+function renderVirtualChart() {
+  var hist = vState.perfHistory;
+  var chartEl = document.getElementById('vPerfChart');
+  var labelsEl = document.getElementById('vPerfLabels');
+  if (hist.length < 2) {
+    chartEl.innerHTML = '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);margin:auto;">Sem histórico ainda — executa pelo menos 2 decisões</div>';
+    labelsEl.innerHTML = '';
+    return;
+  }
+  var maxVal = Math.max.apply(null, hist.map(function(h){ return h.value; }));
+  var minVal = Math.min.apply(null, hist.map(function(h){ return h.value; }));
+  var range = maxVal - minVal || 1;
+  var bars = hist.map(function(h, i) {
+    var heightPct = ((h.value - minVal) / range * 70 + 10);
+    var isGain = h.value >= VIRTUAL_BUDGET;
+    var color = isGain ? 'var(--green)' : 'var(--red)';
+    var isLast = i === hist.length - 1;
+    return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;" title="€' + h.value + '">' +
+      '<div style="height:' + heightPct + '%;background:' + color + ';border-radius:2px 2px 0 0;opacity:' + (isLast ? '1' : '0.6') + ';transition:height 0.4s ease;"></div>' +
+    '</div>';
+  }).join('');
+  chartEl.innerHTML = bars;
+  // Show every 5th label
+  var labels = hist.map(function(h, i) {
+    return (i % Math.max(1, Math.floor(hist.length / 6)) === 0 || i === hist.length-1)
+      ? '<span>' + h.date + '</span>' : '<span></span>';
+  }).join('');
+  labelsEl.innerHTML = labels;
+}
+
+// Init virtual on load
+renderVirtual();
 
 // ── WORKER URL CONFIG ──
 function saveWorkerUrl() {
@@ -2829,6 +3286,296 @@ setTimeout(function() {
 
 // Start countdown bar immediately so it's visible before first fetch
 resetCountdown();
+
+// ── CARTEIRA VIRTUAL AI ──
+var VP_INITIAL = 5000;
+var vpState = JSON.parse(localStorage.getItem('vault_virtual') || 'null') || {
+  cash: VP_INITIAL,
+  positions: {},   // { TICKER: { units, avgPrice, name, currency } }
+  trades: [],      // [ { date, action, ticker, units, price, value, reason } ]
+  log: [],         // [ { date, cycle, reasoning, decisions[] } ]
+  cycle: 0,
+  totalInvested: VP_INITIAL
+};
+
+function vpSave() {
+  localStorage.setItem('vault_virtual', JSON.stringify(vpState));
+}
+
+function vResetPortfolio() {
+  if (!confirm('Reiniciar a carteira virtual? Perdes todo o histórico.')) return;
+  vpState = { cash: VP_INITIAL, positions: {}, trades: [], log: [], cycle: 0, totalInvested: VP_INITIAL };
+  vpSave();
+  vRender();
+}
+
+async function vRunAgent() {
+  var btn = document.getElementById('vRunBtn');
+  var icon = document.getElementById('vRunIcon');
+  var label = document.getElementById('vRunLabel');
+  btn.disabled = true;
+  icon.style.animation = 'spin 1s linear infinite';
+  label.textContent = 'A ANALISAR MERCADO...';
+
+  // Get live prices for current positions + watchlist
+  var watchlist = ['VWCE', 'CSPX', 'IWDA', 'EQQQ', 'BTC', 'IBTC', 'AGGH'];
+  var allTickers = [...new Set([...Object.keys(vpState.positions), ...watchlist])];
+  var prices = {};
+  var names = {};
+  label.textContent = 'A BUSCAR PREÇOS...';
+  for (var t of allTickers) {
+    var info = await fetchLivePrice(t);
+    if (info) { prices[t] = info.price; names[t] = info.name || t; }
+  }
+
+  // Build context for AI
+  var posStr = Object.keys(vpState.positions).length > 0
+    ? Object.entries(vpState.positions).map(function(e) {
+        var t = e[0], p = e[1];
+        var cur = prices[t] || p.avgPrice;
+        var gain = ((cur - p.avgPrice) / p.avgPrice * 100).toFixed(1);
+        return t + ':' + p.units.toFixed(3) + 'un@' + p.avgPrice.toFixed(2) + ' cur:' + cur.toFixed(2) + '(' + (gain>=0?'+':'') + gain + '%)';
+      }).join(', ')
+    : 'nenhuma';
+
+  var priceStr = allTickers.map(function(t){ return t + ':' + (prices[t]||'?'); }).join(', ');
+
+  var prompt = 'És um gestor de fundos AI a gerir uma carteira virtual de ETFs/crypto com €' + vpState.cash.toFixed(2) + ' cash disponível.\n\nPosições atuais: ' + posStr + '\nPreços atuais: ' + priceStr + '\nCiclo #' + (vpState.cycle+1) + '\n\nResponde APENAS com JSON:\n{\n"reasoning":"explica em PT a tua análise do mercado em 2-3 frases",\n"decisions":[\n{"action":"BUY|SELL|HOLD","ticker":"TICKER","pct_cash":25,"reason":"motivo curto em PT"}\n]\n}\n\nRegras:\n- BUY: pct_cash = % do cash a usar (max 40% por operação)\n- SELL: pct_cash = % da posição a vender (25-100)\n- HOLD: mantém sem operar\n- Máximo 2 operações por ciclo\n- Só usa tickers: VWCE,CSPX,IWDA,EQQQ,BTC,IBTC,AGGH\n- Se não tiveres posições, investe o cash em boas oportunidades\n- Diversifica. Gestão de risco prudente.\nJSON puro, sem markdown.';
+
+  label.textContent = 'A DECIDIR...';
+
+  try {
+    var response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        system: 'Gestor de fundos AI. Decisões de investimento educativas, não aconselhamento financeiro regulado.',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    var data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    var raw = data.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    raw = raw.replace(/```json|```/g,'').trim();
+    var match = raw.match(/\{[\s\S]*\}/);
+    var parsed = JSON.parse(match ? match[0] : raw);
+
+    vpState.cycle++;
+    var decisions = parsed.decisions || [];
+    var executed = [];
+
+    decisions.forEach(function(d) {
+      if (!d.ticker || !d.action) return;
+      var t = d.ticker.toUpperCase();
+      var price = prices[t];
+      if (!price) return;
+
+      if (d.action === 'BUY' && d.pct_cash > 0) {
+        var investAmount = Math.min(vpState.cash * (d.pct_cash / 100), vpState.cash * 0.4);
+        if (investAmount < 10) return;
+        var units = investAmount / price;
+        vpState.cash -= investAmount;
+        if (!vpState.positions[t]) {
+          vpState.positions[t] = { units: 0, avgPrice: price, name: names[t] || t, currency: 'EUR' };
+        }
+        var old = vpState.positions[t];
+        var totalUnits = old.units + units;
+        vpState.positions[t].avgPrice = ((old.units * old.avgPrice) + (units * price)) / totalUnits;
+        vpState.positions[t].units = totalUnits;
+        vpState.trades.push({ date: new Date().toISOString(), action: 'COMPRA', ticker: t, units: units, price: price, value: investAmount, reason: d.reason });
+        executed.push('🟢 COMPRA ' + t + ' ' + units.toFixed(3) + ' un. @' + price.toFixed(2) + ' = €' + investAmount.toFixed(2));
+      } else if (d.action === 'SELL' && vpState.positions[t]) {
+        var sellPct = Math.min(d.pct_cash || 100, 100) / 100;
+        var pos = vpState.positions[t];
+        var sellUnits = pos.units * sellPct;
+        var saleValue = sellUnits * price;
+        vpState.cash += saleValue;
+        pos.units -= sellUnits;
+        vpState.trades.push({ date: new Date().toISOString(), action: 'VENDA', ticker: t, units: sellUnits, price: price, value: saleValue, reason: d.reason });
+        executed.push('🔴 VENDA ' + t + ' ' + sellUnits.toFixed(3) + ' un. @' + price.toFixed(2) + ' = €' + saleValue.toFixed(2));
+        if (pos.units < 0.0001) delete vpState.positions[t];
+      } else if (d.action === 'HOLD') {
+        executed.push('🟡 MANTER ' + t + ' — ' + (d.reason||''));
+      }
+    });
+
+    if (executed.length === 0) executed.push('🟡 Sem operações neste ciclo — mercado estável.');
+
+    vpState.log.unshift({
+      date: new Date().toISOString(),
+      cycle: vpState.cycle,
+      reasoning: parsed.reasoning || '',
+      decisions: executed
+    });
+    if (vpState.log.length > 20) vpState.log = vpState.log.slice(0, 20);
+    if (vpState.trades.length > 50) vpState.trades = vpState.trades.slice(-50);
+
+    vpSave();
+    vRender(prices);
+
+  } catch(e) {
+    var logDiv = document.getElementById('vLog');
+    logDiv.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro do Agente</div><div class="insight-text">' + (e.message||'Erro desconhecido') + '</div></div>' + logDiv.innerHTML;
+  }
+
+  icon.style.animation = '';
+  label.textContent = 'EXECUTAR AGENTE';
+  btn.disabled = false;
+}
+
+function vRender(prices) {
+  prices = prices || {};
+
+  // Calculate portfolio value
+  var posVal = 0;
+  Object.entries(vpState.positions).forEach(function(e) {
+    var t = e[0], p = e[1];
+    var cur = prices[t] || p.avgPrice;
+    posVal += p.units * cur;
+  });
+  var totalVal = vpState.cash + posVal;
+  var gain = totalVal - VP_INITIAL;
+  var gainPct = (gain / VP_INITIAL * 100);
+
+  // Metrics
+  document.getElementById('vTotalVal').textContent = '€' + totalVal.toFixed(2);
+  document.getElementById('vTotalChg').textContent = 'Investido: €' + VP_INITIAL.toFixed(2);
+  var gainEl = document.getElementById('vGainVal');
+  gainEl.textContent = (gain >= 0 ? '+' : '') + '€' + gain.toFixed(2);
+  gainEl.style.color = gain >= 0 ? 'var(--green)' : 'var(--red)';
+  var pctEl = document.getElementById('vGainPct');
+  pctEl.textContent = (gainPct >= 0 ? '▲ +' : '▼ ') + gainPct.toFixed(2) + '%';
+  pctEl.className = 'metric-change ' + (gainPct >= 0 ? 'up' : 'down');
+  document.getElementById('vCash').textContent = '€' + vpState.cash.toFixed(2);
+  document.getElementById('vDecisions').textContent = vpState.trades.length + ' operações · Ciclo #' + vpState.cycle;
+  document.getElementById('vCycle').textContent = 'Ciclo #' + vpState.cycle;
+
+  // Positions list
+  var list = document.getElementById('vPositionsList');
+  var posKeys = Object.keys(vpState.positions);
+  document.getElementById('vPosCount').textContent = posKeys.length + ' posição' + (posKeys.length !== 1 ? 'ões' : '');
+
+  if (posKeys.length === 0) {
+    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:11px;line-height:1.8;">Sem posições abertas.<br>Clica em <span style="color:var(--gold)">▶ EXECUTAR AGENTE</span>.</div>';
+  } else {
+    var colors = ['#c9a84c','#4caf7d','#f7931a','#5a9dd6','#e05c5c','#9a70c9','#9a9890'];
+    list.innerHTML = posKeys.map(function(t, i) {
+      var p = vpState.positions[t];
+      var cur = prices[t] || p.avgPrice;
+      var val = p.units * cur;
+      var gain = val - (p.units * p.avgPrice);
+      var gainPct = (gain / (p.units * p.avgPrice) * 100);
+      var col = colors[i % colors.length];
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);gap:8px;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<span style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:' + col + ';">' + t + '</span>' +
+            '<span style="font-family:\'DM Mono\',monospace;font-size:8px;padding:2px 5px;background:var(--green-dim);color:var(--green);border-radius:4px;">● AO VIVO</span>' +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + p.units.toFixed(3) + ' un · PM ' + p.avgPrice.toFixed(2) + ' · Cur ' + cur.toFixed(2) + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;">' +
+          '<div style="font-family:\'DM Serif Display\',serif;font-size:15px;">€' + val.toFixed(2) + '</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:' + (gain>=0?'var(--green)':'var(--red)') + ';">' + (gain>=0?'+':'') + '€' + gain.toFixed(2) + ' (' + (gainPct>=0?'+':'') + gainPct.toFixed(1) + '%)</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Allocation
+  var allocDiv = document.getElementById('vAlloc');
+  if (posKeys.length === 0 || totalVal === 0) {
+    allocDiv.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:11px;">Sem posições</div>';
+  } else {
+    var colors2 = ['#c9a84c','#4caf7d','#f7931a','#5a9dd6','#e05c5c','#9a70c9'];
+    var html = '<div style="display:flex;flex-direction:column;gap:7px;">';
+    // Cash allocation
+    var cashPct = (vpState.cash / totalVal * 100);
+    if (cashPct > 0.1) {
+      html += '<div style="display:flex;align-items:center;gap:10px;"><div style="width:50px;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);">CASH</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:7px;overflow:hidden;"><div style="width:' + cashPct.toFixed(1) + '%;background:var(--border2);height:100%;border-radius:3px;"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);width:36px;text-align:right;">' + cashPct.toFixed(0) + '%</div></div>';
+    }
+    posKeys.forEach(function(t, i) {
+      var p = vpState.positions[t];
+      var cur = prices[t] || p.avgPrice;
+      var pct = (p.units * cur / totalVal * 100);
+      var col = colors2[i % colors2.length];
+      html += '<div style="display:flex;align-items:center;gap:10px;"><div style="width:50px;font-family:\'DM Mono\',monospace;font-size:11px;color:' + col + ';">' + t + '</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:7px;overflow:hidden;"><div style="width:' + pct.toFixed(1) + '%;background:' + col + ';height:100%;border-radius:3px;transition:width 0.6s ease;"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text2);width:36px;text-align:right;">' + pct.toFixed(0) + '%</div></div>';
+    });
+    html += '</div>';
+    allocDiv.innerHTML = html;
+  }
+
+  // Benchmark comparison
+  document.getElementById('vBenchmark').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;">' +
+    '<div style="display:flex;justify-content:space-between;"><span>Esta carteira</span><span style="color:' + (gainPct>=0?'var(--green)':'var(--red)') + ';font-weight:600;">' + (gainPct>=0?'+':'') + gainPct.toFixed(2) + '%</span></div>' +
+    '<div style="display:flex;justify-content:space-between;color:var(--text3);"><span>VWCE (referência)</span><span>—</span></div>' +
+    '</div>';
+
+  // Log
+  var logDiv = document.getElementById('vLog');
+  if (vpState.log.length === 0) {
+    logDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:11px;">O agente ainda não tomou nenhuma decisão.</div>';
+  } else {
+    logDiv.innerHTML = vpState.log.map(function(entry) {
+      var d = new Date(entry.date);
+      var dateStr = d.toLocaleDateString('pt-PT') + ' ' + d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+      return '<div style="background:var(--surface2);border-radius:8px;padding:14px 16px;border-left:2px solid var(--gold);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--gold);">CICLO #' + entry.cycle + '</span>' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);">' + dateStr + '</span>' +
+        '</div>' +
+        '<div style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5;">' + entry.reasoning + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:4px;">' +
+          entry.decisions.map(function(dec) {
+            return '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text);background:var(--surface);border-radius:4px;padding:5px 10px;">' + dec + '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Trade history
+  var histDiv = document.getElementById('vTradeHistory');
+  if (vpState.trades.length === 0) {
+    histDiv.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:11px;">Sem operações</div>';
+  } else {
+    var recent = vpState.trades.slice().reverse().slice(0,20);
+    histDiv.innerHTML = '<table style="width:100%;border-collapse:collapse;">' +
+      '<thead><tr>' +
+        '<th style="text-align:left;font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);padding:0 0 10px;letter-spacing:1px;text-transform:uppercase;">Data</th>' +
+        '<th style="text-align:left;font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);padding:0 0 10px;letter-spacing:1px;text-transform:uppercase;">Ação</th>' +
+        '<th style="text-align:left;font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);padding:0 0 10px;letter-spacing:1px;text-transform:uppercase;">Ativo</th>' +
+        '<th style="text-align:right;font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);padding:0 0 10px;letter-spacing:1px;text-transform:uppercase;">Valor</th>' +
+        '<th style="text-align:left;font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);padding:0 0 10px;letter-spacing:1px;text-transform:uppercase;">Motivo</th>' +
+      '</tr></thead>' +
+      '<tbody>' +
+      recent.map(function(tr) {
+        var d = new Date(tr.date);
+        var dateStr = d.toLocaleDateString('pt-PT') + ' ' + d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+        var isBuy = tr.action === 'COMPRA';
+        return '<tr>' +
+          '<td style="padding:9px 0;font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);border-bottom:1px solid var(--border);">' + dateStr + '</td>' +
+          '<td style="padding:9px 0;border-bottom:1px solid var(--border);"><span style="font-family:\'DM Mono\',monospace;font-size:10px;padding:2px 8px;border-radius:4px;background:' + (isBuy?'var(--green-dim)':'var(--red-dim)') + ';color:' + (isBuy?'var(--green)':'var(--red)') + ';">' + tr.action + '</span></td>' +
+          '<td style="padding:9px 0;font-family:\'DM Mono\',monospace;font-size:12px;color:var(--gold);border-bottom:1px solid var(--border);">' + tr.ticker + '</td>' +
+          '<td style="padding:9px 0;text-align:right;font-family:\'DM Serif Display\',serif;font-size:13px;border-bottom:1px solid var(--border);">€' + tr.value.toFixed(2) + '</td>' +
+          '<td style="padding:9px 0 9px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (tr.reason||'') + '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table>';
+  }
+
+  // Last run
+  if (vpState.log.length > 0) {
+    var d = new Date(vpState.log[0].date);
+    document.getElementById('vLastRun').textContent = 'Última execução: ' + d.toLocaleDateString('pt-PT') + ' às ' + d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+  }
+}
+
+// Init virtual portfolio
+vRender();
 
 // ── LOGIN ──
 var _loginAttempts = 0;
