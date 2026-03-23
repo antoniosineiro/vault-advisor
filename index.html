@@ -2153,12 +2153,7 @@ var CURRENT_PRICES = {}; // filled by live fetch
 var LIVE_INFO = {};       // name, currency, exchange etc per ticker
 var tickerLookupTimer = null;
 
-// Yahoo Finance proxy — works from browser without CORS issues
-function yahooUrl(ticker) {
-  return 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=1d';
-}
-
-// Map our tickers to Yahoo Finance symbols
+// Yahoo Finance — via Cloudflare Worker (evita CORS)
 var YAHOO_MAP = {
   VWCE: 'VWCE.DE', CSPX: 'CSPX.L', IWDA: 'IWDA.AS',
   EQQQ: 'EQQQ.L', AGGH: 'AGGH.L', IBTC: 'IBTC.DE',
@@ -2171,26 +2166,66 @@ function getYahooTicker(ticker) {
 
 async function fetchLivePrice(ticker) {
   var yt = getYahooTicker(ticker.toUpperCase());
+  // Route through Worker to avoid CORS
+  var url = PROXY_URL + '/yahoo?ticker=' + encodeURIComponent(yt);
   try {
-    var r = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(yt) + '?interval=1d&range=1d', { cache: 'no-store' });
+    var r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var d = await r.json();
-    var meta = d.chart.result[0].meta;
+    // Worker returns { price, prevClose, currency, exchange, name, high52, low52 }
+    if (d.error) throw new Error(d.error);
     return {
       ticker: ticker.toUpperCase(),
       yahooTicker: yt,
-      price: meta.regularMarketPrice,
-      prevClose: meta.chartPreviousClose || meta.previousClose,
-      currency: meta.currency,
-      exchange: meta.exchangeName,
-      name: meta.longName || meta.shortName || ticker,
-      high52: meta.fiftyTwoWeekHigh,
-      low52: meta.fiftyTwoWeekLow,
-      marketCap: meta.marketCap
+      price: d.price,
+      prevClose: d.prevClose,
+      currency: d.currency,
+      exchange: d.exchange,
+      name: d.name || ticker,
+      high52: d.high52,
+      low52: d.low52
     };
   } catch(e) {
+    console.warn('fetchLivePrice failed for', ticker, e.message);
     return null;
   }
+}
+
+// ── Multi-turn helper for Anthropic API (handles tool_use) ──
+async function claudeMultiTurn(messages, maxTokens) {
+  maxTokens = maxTokens || 1200;
+  var msgs = messages.slice();
+  var iterations = 0;
+  while (iterations < 6) {
+    iterations++;
+    var response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: msgs
+      })
+    });
+    var data = await response.json();
+    if (data.error) throw new Error(data.error.message || 'API error');
+    var content = data.content || [];
+    if (data.stop_reason === 'tool_use') {
+      var toolResults = content
+        .filter(function(b) { return b.type === 'tool_use'; })
+        .map(function(b) { return { type: 'tool_result', tool_use_id: b.id, content: '' }; });
+      msgs = msgs.concat([
+        { role: 'assistant', content: content },
+        { role: 'user', content: toolResults }
+      ]);
+    } else {
+      // end_turn — extract text
+      var text = content.filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('\n');
+      return text;
+    }
+  }
+  throw new Error('Demasiadas iterações');
 }
 
 async function refreshAllPrices() {
@@ -2484,34 +2519,28 @@ async function analyseCarteira() {
   var posStr = positions.map(function(p) {
     var cur = CURRENT_PRICES[p.ticker] || p.avgPrice;
     var gain = ((cur - p.avgPrice) / p.avgPrice * 100).toFixed(1);
-    return p.ticker + ': ' + p.units.toFixed(3) + ' un., PM €' + p.avgPrice.toFixed(2) + ', atual ~€' + cur.toFixed(2) + ' (' + (gain >= 0 ? '+' : '') + gain + '%), plataforma: ' + p.platform;
+    var name = (LIVE_INFO[p.ticker] && LIVE_INFO[p.ticker].name) ? LIVE_INFO[p.ticker].name : p.ticker;
+    return '• ' + p.ticker + ' (' + name + '): ' + p.units.toFixed(3) + ' un., preço médio de compra: ' + p.avgPrice.toFixed(2) + ', preço atual: ~' + cur.toFixed(2) + ' (' + (gain >= 0 ? '+' : '') + gain + '%), plataforma: ' + p.platform;
   }).join('\n');
 
-  var prompt = 'És o VAULT, advisor privado de um investidor português. Analisa esta carteira real e responde em português de Portugal.\n\nCARTEIRA ATUAL:\n' + posStr + '\n\nCom base nos dados atuais de mercado (pesquisa web se necessário), dá uma análise detalhada:\n1. Para cada posição: MANTER, VENDER ou REFORÇAR — com justificação\n2. Existe algum ETF melhor para substituir alguma posição?\n3. A carteira está bem diversificada?\n4. Qual o risco global?\n5. Recomendação concreta de ação para esta semana\n\nSê direto, usa dados reais, menciona que é análise educativa.';
-
-  carteiraChatHistory = [{ role: 'user', content: prompt }];
+  var prompt = 'És o VAULT, advisor privado de um investidor português. Analisa esta carteira REAL com dados atuais de mercado e responde em português de Portugal.\n\nCARTEIRA DO UTILIZADOR:\n' + posStr + '\n\nPesquisa na web o estado atual de cada ativo e faz uma análise completa:\n\n1. **Para cada posição** — MANTER 🟢, REFORÇAR 🔵 ou VENDER 🔴 com justificação clara\n2. **Existe alternativa melhor?** — Sugere ETFs superiores se aplicável\n3. **Diversificação** — A carteira está bem equilibrada?\n4. **Risco global** — Avalia o risco da carteira\n5. **Ação concreta esta semana** — O que fazer agora?\n\nSê direto, usa dados reais e percentagens. Nota que é análise educativa, não aconselhamento financeiro regulado.';
 
   try {
-    var response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: carteiraChatHistory
-      })
-    });
-    var data = await response.json();
-    var text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
-    carteiraChatHistory.push({ role: 'assistant', content: text });
-
-    var formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-    result.innerHTML = '<div style="background:var(--surface2);border-radius:8px;padding:16px;font-size:13px;line-height:1.7;color:var(--text2);">' + formatted + '</div>';
+    var text = await claudeMultiTurn([{ role: 'user', content: prompt }], 1800);
+    carteiraChatHistory = [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: text }
+    ];
+    var formatted = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/🟢|🔵|🔴/g, function(m){ return '<span style="font-size:14px;">'+m+'</span>'; })
+      .replace(/\n\n/g, '</p><p style="margin-top:10px;">')
+      .replace(/\n/g, '<br>');
+    result.innerHTML = '<div style="background:var(--surface2);border-radius:8px;padding:16px;font-size:13px;line-height:1.7;color:var(--text2);"><p>' + formatted + '</p></div>';
     var now = new Date();
     timeEl.textContent = 'Analisado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
   } catch(e) {
-    result.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro</div><div class="insight-text">Não foi possível analisar. Tenta novamente.</div></div>';
+    result.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro na análise</div><div class="insight-text">Erro: ' + (e.message||'desconhecido') + '. Verifica o Worker e tenta novamente.</div></div>';
   }
 
   label.textContent = 'ANALISAR CARTEIRA';
@@ -2529,14 +2558,12 @@ async function sendCarteiraMsg() {
 async function sendCarteiraQ(msg) {
   var msgs = document.getElementById('carteiraChatMsgs');
 
-  // Add user bubble
   var userDiv = document.createElement('div');
   userDiv.className = 'msg user';
   userDiv.innerHTML = '<div class="msg-avatar user">A</div><div><div class="msg-bubble">' + msg + '</div></div>';
   msgs.appendChild(userDiv);
   msgs.scrollTop = msgs.scrollHeight;
 
-  // Typing
   var typDiv = document.createElement('div');
   typDiv.className = 'msg';
   typDiv.innerHTML = '<div class="msg-avatar ai">◉</div><div class="msg-bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
@@ -2544,32 +2571,22 @@ async function sendCarteiraQ(msg) {
   msgs.scrollTop = msgs.scrollHeight;
 
   var posStr = positions.length > 0 ? positions.map(function(p) {
-    return p.ticker + ': ' + p.units.toFixed(3) + ' un., PM €' + p.avgPrice.toFixed(2) + ', plataforma: ' + p.platform;
+    var cur = CURRENT_PRICES[p.ticker] || p.avgPrice;
+    return p.ticker + ': ' + p.units.toFixed(3) + ' un., PM: ' + p.avgPrice.toFixed(2) + ', atual: ~' + cur.toFixed(2) + ', plataforma: ' + p.platform;
   }).join('; ') : 'Sem posições';
 
-  var contextMsg = 'Contexto da carteira do utilizador: ' + posStr + '\n\nPergunta: ' + msg;
-
-  if (carteiraChatHistory.length === 0) {
-    carteiraChatHistory.push({ role: 'user', content: contextMsg });
+  // Build messages — include previous chat context
+  var allMsgs = carteiraChatHistory.slice();
+  if (allMsgs.length === 0) {
+    allMsgs.push({ role: 'user', content: 'Contexto da carteira: ' + posStr + '\n\nPergunta: ' + msg });
   } else {
-    carteiraChatHistory.push({ role: 'user', content: msg });
+    allMsgs.push({ role: 'user', content: msg });
   }
 
   try {
-    var response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 800,
-        system: 'És o VAULT, advisor privado de um investidor português. Respondes sempre em português de Portugal. Sê direto e concreto. Análises são educativas, não aconselhamento financeiro regulado.',
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: carteiraChatHistory
-      })
-    });
-    var data = await response.json();
-    var text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
-    carteiraChatHistory.push({ role: 'assistant', content: text });
+    var text = await claudeMultiTurn(allMsgs, 800);
+    carteiraChatHistory = allMsgs.concat([{ role: 'assistant', content: text }]);
+
     msgs.removeChild(typDiv);
     var aiDiv = document.createElement('div');
     aiDiv.className = 'msg';
@@ -2581,7 +2598,7 @@ async function sendCarteiraQ(msg) {
     msgs.removeChild(typDiv);
     var errDiv = document.createElement('div');
     errDiv.className = 'msg';
-    errDiv.innerHTML = '<div class="msg-avatar ai">◉</div><div><div class="msg-bubble">Erro ao responder. Tenta novamente.</div></div>';
+    errDiv.innerHTML = '<div class="msg-avatar ai">◉</div><div><div class="msg-bubble">Erro: ' + (e.message||'desconhecido') + '. Tenta novamente.</div></div>';
     msgs.appendChild(errDiv);
   }
 }
