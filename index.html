@@ -1465,8 +1465,24 @@
 
       <!-- ===== SETTINGS ===== -->
       <div class="page" id="page-settings">
-        <div class="card" style="margin-bottom:16px;">
-          <div class="settings-title">Perfil de Risco</div>
+        <div class="card" style="margin-bottom:16px;border:1px solid rgba(201,168,76,0.3);">
+          <div class="settings-title" style="color:var(--gold);">⚡ Configuração do Worker (Obrigatório)</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6;">
+            Cola aqui o URL do teu Cloudflare Worker. Encontras-o em <strong style="color:var(--text2)">cloudflare.com → Workers & Pages → vault-proxy</strong>.
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="workerUrlInput" class="login-input" type="text"
+              placeholder="https://vault-proxy.XXXXX.workers.dev"
+              style="flex:1;font-family:'DM Mono',monospace;font-size:11px;"
+              value="" />
+            <button onclick="saveWorkerUrl()" style="
+              background:var(--gold);border:none;border-radius:8px;
+              padding:10px 16px;color:#000;font-family:'DM Mono',monospace;
+              font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer;
+              white-space:nowrap;">GUARDAR</button>
+          </div>
+          <div id="workerUrlStatus" style="font-family:'DM Mono',monospace;font-size:10px;margin-top:8px;"></div>
+        </div>
           <div class="setting-row">
             <div><div class="setting-label">Tolerância ao Risco</div><div class="setting-sub">Afeta as recomendações do Agente AI</div></div>
             <select class="select-input" id="riskTolerance">
@@ -1745,9 +1761,10 @@
 
 <script>
 // ══════════════════════════════════════════════════
-// CONFIGURAÇÃO — substitui pelo URL do teu Worker
+// CONFIGURAÇÃO — URL do Cloudflare Worker
+// Podes definir aqui OU nas Configurações da app
 // ══════════════════════════════════════════════════
-var PROXY_URL = 'https://tiny-shadow-e126.antonio-sineiro.workers.dev';
+var PROXY_URL = localStorage.getItem('vault_worker_url') || 'https://tiny-shadow-e126.antonio-sineiro.workers.dev';
 // ══════════════════════════════════════════════════
 
 // ── NAV ──
@@ -2153,15 +2170,59 @@ var CURRENT_PRICES = {}; // filled by live fetch
 var LIVE_INFO = {};       // name, currency, exchange etc per ticker
 var tickerLookupTimer = null;
 
+// ── WORKER URL CONFIG ──
+function saveWorkerUrl() {
+  var url = document.getElementById('workerUrlInput').value.trim();
+  if (!url || !url.startsWith('https://')) {
+    document.getElementById('workerUrlStatus').innerHTML = '<span style="color:var(--red)">⚠️ URL inválido. Deve começar com https://</span>';
+    return;
+  }
+  url = url.replace(/\/$/, ''); // remove trailing slash
+  localStorage.setItem('vault_worker_url', url);
+  PROXY_URL = url;
+  document.getElementById('workerUrlStatus').innerHTML = '<span style="color:var(--green)">✓ Guardado! A testar ligação...</span>';
+  // Test connection
+  fetch(url + '/yahoo?ticker=BTC-EUR', { cache: 'no-store' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.price) {
+        document.getElementById('workerUrlStatus').innerHTML = '<span style="color:var(--green)">✓ Worker ligado e a funcionar! BTC = ' + d.price.toFixed(0) + ' EUR</span>';
+      } else {
+        document.getElementById('workerUrlStatus').innerHTML = '<span style="color:var(--gold)">⚠️ Worker responde mas sem preço. Verifica o código do Worker.</span>';
+      }
+    })
+    .catch(function() {
+      document.getElementById('workerUrlStatus').innerHTML = '<span style="color:var(--red)">✗ Não foi possível ligar. Verifica o URL e se o Worker está ativo.</span>';
+    });
+}
+
+// Pre-fill input with current URL on page load
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('workerUrlInput');
+  if (inp) {
+    var saved = localStorage.getItem('vault_worker_url') || '';
+    inp.value = saved;
+  }
+});
+
 // Yahoo Finance — via Cloudflare Worker (evita CORS)
 // Sufixos de bolsa a tentar automaticamente
 var YAHOO_MAP = {
-  VWCE: 'VWCE.DE', CSPX: 'CSPX.L', IWDA: 'IWDA.AS',
-  EQQQ: 'EQQQ.L', AGGH: 'AGGH.L', IBTC: 'IBTC.DE',
-  BTC: 'BTC-EUR', ETH: 'ETH-EUR'
+  // ETFs UCITS — Xetra (DE)
+  VWCE: 'VWCE.DE', IBTC: 'IBTC.DE', EXSA: 'EXSA.DE',
+  VGWL: 'VGWL.DE', VGWD: 'VGWD.DE', MEUD: 'MEUD.DE',
+  EXXT: 'EXXT.DE', SPPW: 'SPPW.DE', SPYW: 'SPYW.DE',
+  XDWD: 'XDWD.DE', XDWL: 'XDWL.DE', DBXD: 'DBXD.DE',
+  // ETFs UCITS — London (L)
+  CSPX: 'CSPX.L', IWDA: 'IWDA.L', EQQQ: 'EQQQ.L',
+  AGGH: 'AGGH.L', IGLN: 'IGLN.L', IEMA: 'IEMA.L',
+  SWRD: 'SWRD.L', SAWD: 'SAWD.L', HMWD: 'HMWD.L',
+  // ETFs UCITS — Amsterdam (AS)
+  IWDA_AS: 'IWDA.AS', EMIM: 'EMIM.AS', IUSQ: 'IUSQ.AS',
+  // Crypto
+  BTC: 'BTC-EUR', ETH: 'ETH-EUR', SOL: 'SOL-EUR',
 };
-// Suffixes to auto-try for unknown tickers (UCITS ETFs common exchanges)
-var YAHOO_SUFFIXES = ['.DE', '.L', '.AS', '.MI', '.PA', '.SW', '.F', ''];
+var YAHOO_SUFFIXES = ['.DE', '.L', '.AS', '.MI', '.PA', '.SW', '.F', '.MC', ''];
 
 async function fetchYahooTicker(yt) {
   var url = PROXY_URL + '/yahoo?ticker=' + encodeURIComponent(yt);
