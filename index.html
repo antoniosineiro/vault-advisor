@@ -50,7 +50,7 @@
   }
 
   /* ── LAYOUT ── */
-  .app { display: flex; height: 100vh; position: relative; z-index: 1; }
+  .app { display: flex; height: 100vh; max-height: 100vh; position: relative; z-index: 1; overflow: hidden; }
 
   /* ── SIDEBAR ── */
   .sidebar {
@@ -132,7 +132,7 @@
   .profile-role { font-size: 10.5px; color: var(--text3); }
 
   /* ── MAIN ── */
-  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 
   /* ── TOPBAR ── */
   .topbar {
@@ -156,7 +156,7 @@
   .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
 
   /* ── CONTENT ── */
-  .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .content { flex: 1; min-height: 0; overflow-y: auto; padding: 24px 28px; }
   .content::-webkit-scrollbar { width: 4px; }
   .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
@@ -1483,6 +1483,8 @@
           </div>
           <div id="workerUrlStatus" style="font-family:'DM Mono',monospace;font-size:10px;margin-top:8px;"></div>
         </div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="settings-title">Perfil de Risco</div>
           <div class="setting-row">
             <div><div class="setting-label">Tolerância ao Risco</div><div class="setting-sub">Afeta as recomendações do Agente AI</div></div>
             <select class="select-input" id="riskTolerance">
@@ -1551,7 +1553,7 @@
       </div><!-- /page-settings -->
 
       <!-- ===== CARTEIRA ===== -->
-      <div class="page" id="page-carteira">
+      <div class="page" id="page-carteira" style="padding-bottom:40px;">
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
           <div>
@@ -1624,7 +1626,7 @@
         </div>
 
         <!-- AI Analysis -->
-        <div class="card" id="carteiraAICard">
+        <div class="card" id="carteiraAICard" style="overflow:visible; margin-bottom:40px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
             <div>
               <div class="card-title" style="margin:0;">Análise AI da Carteira</div>
@@ -1640,7 +1642,7 @@
             </button>
           </div>
 
-          <div id="carteiraAIResult">
+          <div id="carteiraAIResult" style="min-height:60px;">
             <div style="padding:20px;text-align:center;background:var(--surface2);border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);line-height:1.8;">
               Adiciona pelo menos uma posição e clica em<br>
               <strong style="color:var(--gold)">🤖 ANALISAR CARTEIRA</strong><br>
@@ -2625,9 +2627,9 @@ async function analyseCarteira() {
     ];
     var formatted = text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n\n/g, '</p><p style="margin-top:8px;">')
+      .replace(/\n\n/g, '</p><p style="margin-top:10px;">')
       .replace(/\n/g, '<br>');
-    result.innerHTML = '<div style="background:var(--surface2);border-radius:8px;padding:16px;font-size:13px;line-height:1.7;color:var(--text2);"><p>' + formatted + '</p></div>';
+    result.innerHTML = '<div style="font-size:13px;line-height:1.8;color:var(--text2);padding:4px 0;"><p>' + formatted + '</p></div>';
     var now = new Date();
     timeEl.textContent = 'Analisado às ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
   } catch(e) {
