@@ -1747,7 +1747,7 @@
 // ══════════════════════════════════════════════════
 // CONFIGURAÇÃO — substitui pelo URL do teu Worker
 // ══════════════════════════════════════════════════
-var PROXY_URL = 'https://tiny-shadow-e126.antonio-sineiro.workers.dev';
+var PROXY_URL = 'https://vault-proxy.SEU-SUBDOMAIN.workers.dev';
 // ══════════════════════════════════════════════════
 
 // ── NAV ──
@@ -2154,41 +2154,59 @@ var LIVE_INFO = {};       // name, currency, exchange etc per ticker
 var tickerLookupTimer = null;
 
 // Yahoo Finance — via Cloudflare Worker (evita CORS)
+// Sufixos de bolsa a tentar automaticamente
 var YAHOO_MAP = {
   VWCE: 'VWCE.DE', CSPX: 'CSPX.L', IWDA: 'IWDA.AS',
   EQQQ: 'EQQQ.L', AGGH: 'AGGH.L', IBTC: 'IBTC.DE',
-  BTC: 'BTC-EUR'
+  BTC: 'BTC-EUR', ETH: 'ETH-EUR'
 };
+// Suffixes to auto-try for unknown tickers (UCITS ETFs common exchanges)
+var YAHOO_SUFFIXES = ['.DE', '.L', '.AS', '.MI', '.PA', '.SW', '.F', ''];
 
-function getYahooTicker(ticker) {
-  return YAHOO_MAP[ticker] || ticker;
+async function fetchYahooTicker(yt) {
+  var url = PROXY_URL + '/yahoo?ticker=' + encodeURIComponent(yt);
+  var r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  var d = await r.json();
+  if (d.error) throw new Error(d.error);
+  if (!d.price) throw new Error('Sem preço');
+  return d;
 }
 
 async function fetchLivePrice(ticker) {
-  var yt = getYahooTicker(ticker.toUpperCase());
-  // Route through Worker to avoid CORS
-  var url = PROXY_URL + '/yahoo?ticker=' + encodeURIComponent(yt);
-  try {
-    var r = await fetch(url, { cache: 'no-store' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    var d = await r.json();
-    // Worker returns { price, prevClose, currency, exchange, name, high52, low52 }
-    if (d.error) throw new Error(d.error);
-    return {
-      ticker: ticker.toUpperCase(),
-      yahooTicker: yt,
-      price: d.price,
-      prevClose: d.prevClose,
-      currency: d.currency,
-      exchange: d.exchange,
-      name: d.name || ticker,
-      high52: d.high52,
-      low52: d.low52
-    };
-  } catch(e) {
-    console.warn('fetchLivePrice failed for', ticker, e.message);
-    return null;
+  var t = ticker.toUpperCase().trim();
+
+  // 1. Try the known map first
+  if (YAHOO_MAP[t]) {
+    try {
+      var d = await fetchYahooTicker(YAHOO_MAP[t]);
+      return { ticker: t, yahooTicker: YAHOO_MAP[t], price: d.price, prevClose: d.prevClose, currency: d.currency, exchange: d.exchange, name: d.name || t, high52: d.high52, low52: d.low52 };
+    } catch(e) {}
   }
+
+  // 2. If ticker already has a dot (e.g. EXSA.DE), try directly
+  if (t.includes('.')) {
+    try {
+      var d = await fetchYahooTicker(t);
+      return { ticker: t.split('.')[0], yahooTicker: t, price: d.price, prevClose: d.prevClose, currency: d.currency, exchange: d.exchange, name: d.name || t, high52: d.high52, low52: d.low52 };
+    } catch(e) {}
+  }
+
+  // 3. Auto-try all suffixes
+  for (var i = 0; i < YAHOO_SUFFIXES.length; i++) {
+    var yt = t + YAHOO_SUFFIXES[i];
+    try {
+      var d = await fetchYahooTicker(yt);
+      // Cache this mapping for future use
+      YAHOO_MAP[t] = yt;
+      return { ticker: t, yahooTicker: yt, price: d.price, prevClose: d.prevClose, currency: d.currency, exchange: d.exchange, name: d.name || t, high52: d.high52, low52: d.low52 };
+    } catch(e) {
+      // try next suffix
+    }
+  }
+
+  console.warn('fetchLivePrice: nenhum sufixo funcionou para', t);
+  return null;
 }
 
 // ── Multi-turn helper for Anthropic API (handles tool_use) ──
@@ -2519,14 +2537,13 @@ async function analyseCarteira() {
   var posStr = positions.map(function(p) {
     var cur = CURRENT_PRICES[p.ticker] || p.avgPrice;
     var gain = ((cur - p.avgPrice) / p.avgPrice * 100).toFixed(1);
-    var name = (LIVE_INFO[p.ticker] && LIVE_INFO[p.ticker].name) ? LIVE_INFO[p.ticker].name : p.ticker;
-    return '• ' + p.ticker + ' (' + name + '): ' + p.units.toFixed(3) + ' un., preço médio de compra: ' + p.avgPrice.toFixed(2) + ', preço atual: ~' + cur.toFixed(2) + ' (' + (gain >= 0 ? '+' : '') + gain + '%), plataforma: ' + p.platform;
-  }).join('\n');
+    return p.ticker + '|PM:' + p.avgPrice.toFixed(2) + '|cur:' + cur.toFixed(2) + '|' + (gain>=0?'+':'') + gain + '%|' + p.units.toFixed(2) + 'un';
+  }).join('; ');
 
-  var prompt = 'És o VAULT, advisor privado de um investidor português. Analisa esta carteira REAL com dados atuais de mercado e responde em português de Portugal.\n\nCARTEIRA DO UTILIZADOR:\n' + posStr + '\n\nPesquisa na web o estado atual de cada ativo e faz uma análise completa:\n\n1. **Para cada posição** — MANTER 🟢, REFORÇAR 🔵 ou VENDER 🔴 com justificação clara\n2. **Existe alternativa melhor?** — Sugere ETFs superiores se aplicável\n3. **Diversificação** — A carteira está bem equilibrada?\n4. **Risco global** — Avalia o risco da carteira\n5. **Ação concreta esta semana** — O que fazer agora?\n\nSê direto, usa dados reais e percentagens. Nota que é análise educativa, não aconselhamento financeiro regulado.';
+  var prompt = 'Advisor PT. Carteira: ' + posStr + '. Responde em PT com: 1)Cada posição: MANTER🟢/REFORÇAR🔵/VENDER🔴 + motivo curto 2)Melhor alternativa? 3)Diversificação ok? 4)Ação esta semana. Usa dados reais. Análise educativa.';
 
   try {
-    var text = await claudeMultiTurn([{ role: 'user', content: prompt }], 1800);
+    var text = await claudeMultiTurn([{ role: 'user', content: prompt }], 800);
     carteiraChatHistory = [
       { role: 'user', content: prompt },
       { role: 'assistant', content: text }
@@ -2572,19 +2589,19 @@ async function sendCarteiraQ(msg) {
 
   var posStr = positions.length > 0 ? positions.map(function(p) {
     var cur = CURRENT_PRICES[p.ticker] || p.avgPrice;
-    return p.ticker + ': ' + p.units.toFixed(3) + ' un., PM: ' + p.avgPrice.toFixed(2) + ', atual: ~' + cur.toFixed(2) + ', plataforma: ' + p.platform;
-  }).join('; ') : 'Sem posições';
+    return p.ticker + ':PM' + p.avgPrice.toFixed(2) + '/cur' + cur.toFixed(2) + '/' + p.units.toFixed(2) + 'un';
+  }).join(',') : 'sem posições';
 
   // Build messages — include previous chat context
   var allMsgs = carteiraChatHistory.slice();
   if (allMsgs.length === 0) {
-    allMsgs.push({ role: 'user', content: 'Contexto da carteira: ' + posStr + '\n\nPergunta: ' + msg });
+    allMsgs.push({ role: 'user', content: 'Carteira PT: ' + posStr + '. ' + msg });
   } else {
     allMsgs.push({ role: 'user', content: msg });
   }
 
   try {
-    var text = await claudeMultiTurn(allMsgs, 800);
+    var text = await claudeMultiTurn(allMsgs, 600);
     carteiraChatHistory = allMsgs.concat([{ role: 'assistant', content: text }]);
 
     msgs.removeChild(typDiv);
@@ -2616,19 +2633,13 @@ var insightsCountdown = insightsIntervalSecs;
 var insightsCountdownTimer = null;
 var insightsAutoTimer = null;
 
-var INSIGHTS_PROMPT = `És o VAULT, um advisor de investimentos privado para um investidor português.
-Analisa o mercado AGORA com pesquisa web e gera exactamente 3 insights curtos e diretos em português de Portugal.
-
-Formato obrigatório — responde APENAS com este JSON, sem mais nada:
-{
-  "insights": [
-    {"type": "bullish", "header": "📈 Título · Categoria", "text": "Análise concreta em 2-3 frases."},
-    {"type": "neutral",  "header": "⚡ Título · Categoria", "text": "Análise concreta em 2-3 frases."},
-    {"type": "bearish",  "header": "⚠️ Título · Categoria", "text": "Análise concreta em 2-3 frases."}
-  ]
-}
-
-Cobre: ETFs (VWCE, CSPX, IWDA), Bitcoin, e macro/risco. Sê específico com números reais. Não uses markdown, apenas JSON puro.`;
+var INSIGHTS_PROMPT = `Advisor PT. Pesquisa mercado agora. Responde APENAS JSON:
+{"insights":[
+{"type":"bullish","header":"📈 Título","text":"2 frases concretas."},
+{"type":"neutral","header":"⚡ Título","text":"2 frases concretas."},
+{"type":"bearish","header":"⚠️ Título","text":"2 frases concretas."}
+]}
+Cobre ETFs(VWCE/CSPX), BTC e macro. Números reais. Sem markdown extra.`;
 
 function fetchInsights() {
   var btn = document.getElementById('refreshBtn');
