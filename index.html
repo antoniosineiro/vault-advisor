@@ -1628,8 +1628,18 @@
           </div>
         </div>
 
-        <!-- AI Analysis -->
-        <div class="card" id="carteiraAICard" style="overflow:visible; margin-bottom:40px;">
+        <!-- Transaction History -->
+        <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden;">
+          <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">📋 Histórico de Transações</div>
+            <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="histCount">0 transações</span>
+          </div>
+          <div id="historyList" style="max-height:220px;overflow-y:auto;">
+            <div style="padding:20px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">
+              O histórico de transações aparece aqui.
+            </div>
+          </div>
+        </div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
             <div>
               <div class="card-title" style="margin:0;">Análise AI da Carteira</div>
@@ -1684,14 +1694,37 @@
             <label class="login-label">ETF / Ativo</label>
             <select id="mEtf" class="login-input" style="cursor:pointer;">
               <option value="">— Seleciona —</option>
-              <option value="VWCE">VWCE — Vanguard All-World</option>
-              <option value="CSPX">CSPX — iShares S&P 500</option>
-              <option value="IWDA">IWDA — iShares MSCI World</option>
-              <option value="EQQQ">EQQQ — Invesco NASDAQ-100</option>
-              <option value="AGGH">AGGH — iShares Global Bond</option>
-              <option value="IBTC">IBTC — iShares Bitcoin ETP</option>
-              <option value="BTC">BTC — Bitcoin (direto)</option>
-              <option value="OUTRO">Outro (manual)</option>
+              <optgroup label="── ETFs Globais (UCITS) ──">
+                <option value="VWCE">VWCE — Vanguard FTSE All-World</option>
+                <option value="VGWL">VGWL — Vanguard FTSE All-World (acc)</option>
+                <option value="IWDA">IWDA — iShares Core MSCI World</option>
+                <option value="SWRD">SWRD — SPDR MSCI World</option>
+              </optgroup>
+              <optgroup label="── ETFs EUA ──">
+                <option value="CSPX">CSPX — iShares Core S&P 500</option>
+                <option value="EQQQ">EQQQ — Invesco NASDAQ-100</option>
+                <option value="SPPW">SPPW — SPDR S&P 500</option>
+              </optgroup>
+              <optgroup label="── ETFs Europa ──">
+                <option value="EXSA">EXSA — iShares STOXX Europe 600</option>
+                <option value="MEUD">MEUD — Amundi MSCI Europe</option>
+              </optgroup>
+              <optgroup label="── Obrigações ──">
+                <option value="AGGH">AGGH — iShares Global Aggregate Bond</option>
+              </optgroup>
+              <optgroup label="── Ouro &amp; Matérias-Primas ──">
+                <option value="IGLN">IGLN — iShares Physical Gold ETC (USD)</option>
+                <option value="SGLN">SGLN — iShares Physical Swiss Gold ETC</option>
+                <option value="ZSGL">ZSGL — WisdomTree Physical Swiss Gold</option>
+                <option value="PPFB">PPFB — Invesco Physical Gold ETC</option>
+                <option value="4GLD">4GLD — Xetra-Gold ETC</option>
+                <option value="WGLD">WGLD — WisdomTree Core Physical Gold</option>
+              </optgroup>
+              <optgroup label="── Crypto ──">
+                <option value="BTC">BTC — Bitcoin (direto)</option>
+                <option value="IBTC">IBTC — iShares Bitcoin ETP</option>
+              </optgroup>
+              <option value="OUTRO">✏️ Outro (introduzir ticker)</option>
             </select>
           </div>
           <div id="mOutroWrap" style="display:none;" class="login-field">
@@ -1849,109 +1882,13 @@
 
       </div><!-- /page-virtual -->
 
-      <!-- ===== CARTEIRA VIRTUAL AI ===== -->
-      <div class="page" id="page-virtual" style="padding-bottom:60px;">
-
-        <!-- Header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-          <div>
-            <div style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">Orçamento inicial: €5.000 · Gerido pelo Agente AI VAULT</div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button onclick="resetVirtual()" style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text3);border-radius:8px;padding:9px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all 0.15s;">
-              ↺ REINICIAR
-            </button>
-            <button onclick="runVirtualAI()" id="vRunBtn" style="display:flex;align-items:center;gap:8px;background:var(--gold);border:none;border-radius:8px;padding:9px 18px;color:#000;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;transition:all 0.15s;">
-              🤖 <span id="vRunLabel">EXECUTAR DECISÃO AI</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Metrics -->
-        <div class="dash-grid" style="margin-bottom:20px;">
-          <div class="metric-card gold">
-            <div class="metric-label">Valor Total da Carteira</div>
-            <div class="metric-value" id="vTotalVal">€5.000</div>
-            <div class="metric-change" id="vTotalChg" style="color:var(--text3)">Início: €5.000</div>
-          </div>
-          <div class="metric-card green">
-            <div class="metric-label">Ganho / Perda Total</div>
-            <div class="metric-value" id="vGainVal">€0</div>
-            <div class="metric-change" id="vGainPct" style="color:var(--text3)">+0.00%</div>
-          </div>
-          <div class="metric-card btc">
-            <div class="metric-label">Disponível em Caixa</div>
-            <div class="metric-value" id="vCashVal">€5.000</div>
-            <div class="metric-change" id="vDecisions" style="color:var(--text3)">0 decisões tomadas</div>
-          </div>
-        </div>
-
-        <div class="two-col" style="margin-bottom:20px;align-items:start;">
-
-          <!-- Positions -->
-          <div class="card" style="padding:0;overflow:hidden;">
-            <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-              <div class="card-title" style="margin:0;">Posições Abertas</div>
-              <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="vPosCount">0 posições</span>
-            </div>
-            <div id="vPositionsList">
-              <div style="padding:24px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);line-height:1.8;">
-                O agente AI ainda não tomou<br>nenhuma decisão de investimento.
-              </div>
-            </div>
-            <!-- Allocation bar -->
-            <div style="padding:12px 16px;border-top:1px solid var(--border);" id="vAllocWrap"></div>
-          </div>
-
-          <!-- AI Decision Log -->
-          <div class="card" style="padding:0;overflow:hidden;">
-            <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);">
-              <div class="card-title" style="margin:0;">Registo de Decisões AI</div>
-            </div>
-            <div id="vDecisionLog" style="max-height:380px;overflow-y:auto;padding:0;">
-              <div style="padding:24px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">
-                Clica em "Executar Decisão AI"<br>para o agente analisar e investir.
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- AI Reasoning -->
-        <div class="card" style="margin-bottom:20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <div class="card-title" style="margin:0;">Raciocínio do Agente AI</div>
-            <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="vLastUpdate">Sem análise ainda</span>
-          </div>
-          <div id="vReasoning" style="font-size:13px;line-height:1.8;color:var(--text2);">
-            <div style="padding:16px;background:var(--surface2);border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:center;">
-              O agente vai explicar aqui o seu raciocínio a cada decisão de investimento.
-            </div>
-          </div>
-        </div>
-
-        <!-- Performance chart placeholder -->
-        <div class="card">
-          <div class="card-title">Histórico de Performance</div>
-          <div id="vPerfChart" style="display:flex;align-items:flex-end;gap:3px;height:80px;margin-top:8px;">
-            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin:auto;">Sem histórico ainda</div>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);" id="vPerfLabels"></div>
-        </div>
-
-      </div><!-- /page-virtual -->
-
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
 
-      <!-- ===== VIRTUAL PORTFOLIO PAGE ===== -->
-      <!-- Note: injected via JS into content on showPage -->
-
 <script>
 // ══════════════════════════════════════════════════
 // CONFIGURAÇÃO — URL do Cloudflare Worker
-// Podes definir aqui OU nas Configurações da app
 // ══════════════════════════════════════════════════
 var PROXY_URL = localStorage.getItem('vault_worker_url') || 'https://tiny-shadow-e126.antonio-sineiro.workers.dev';
 // ══════════════════════════════════════════════════
@@ -2031,32 +1968,15 @@ async function sendMessage() {
   const typingId = addTyping();
   
   try {
-    const response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: SYSTEM_PROMPT,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: chatHistory
-      })
-    });
-    
-    const data = await response.json();
+    const text = await claudeMultiTurn(chatHistory, 800);
     removeTyping(typingId);
-    
-    const fullText = data.content
-      .map(b => b.type === 'text' ? b.text : '')
-      .filter(Boolean)
-      .join('\n');
-    
-    chatHistory.push({ role: 'assistant', content: fullText });
-    addMsg(fullText, 'ai');
-    
+    // Keep only last 6 messages to avoid token buildup
+    chatHistory.push({ role: 'assistant', content: text });
+    if (chatHistory.length > 6) chatHistory = chatHistory.slice(-6);
+    addMsg(text, 'ai');
   } catch (err) {
     removeTyping(typingId);
-    addMsg('Erro a conectar ao servidor. Tenta novamente.', 'ai');
+    addMsg('Erro: ' + (err.message || 'desconhecido') + '. Tenta novamente.', 'ai');
   }
   
   btn.disabled = false;
@@ -2355,279 +2275,32 @@ function selectETF(ticker, el) {
 
 // ── CARTEIRA ──
 var positions = JSON.parse(localStorage.getItem('vault_positions') || '[]');
+var posHistory = JSON.parse(localStorage.getItem('vault_pos_history') || '[]');
 var carteiraChatHistory = [];
-var CURRENT_PRICES = {}; // filled by live fetch
-var LIVE_INFO = {};       // name, currency, exchange etc per ticker
+var CURRENT_PRICES = {};
+var LIVE_INFO = {};
 var tickerLookupTimer = null;
 
-// ── CARTEIRA VIRTUAL AI ──
-var VIRTUAL_BUDGET = 5000;
-var vState = JSON.parse(localStorage.getItem('vault_virtual') || 'null') || {
-  cash: 5000,
-  positions: {},   // { ticker: { units, avgPrice, name, currency } }
-  log: [],         // [ { date, action, ticker, units, price, total, reason } ]
-  perfHistory: [], // [ { date, value } ]
-  decisions: 0
-};
-
-function saveVirtual() {
-  localStorage.setItem('vault_virtual', JSON.stringify(vState));
+function savePositions() {
+  localStorage.setItem('vault_positions', JSON.stringify(positions));
 }
-
-function resetVirtual() {
-  if (!confirm('Reiniciar a carteira virtual? Perdes todo o histórico.')) return;
-  vState = { cash: 5000, positions: {}, log: [], perfHistory: [], decisions: 0 };
-  saveVirtual();
-  renderVirtual();
-  document.getElementById('vReasoning').innerHTML = '<div style="padding:16px;background:var(--surface2);border-radius:8px;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);text-align:center;">Carteira reiniciada. Clica em "Executar Decisão AI" para começar.</div>';
+function savePosHistory() {
+  localStorage.setItem('vault_pos_history', JSON.stringify(posHistory.slice(0, 100)));
 }
-
-async function runVirtualAI() {
-  var btn = document.getElementById('vRunBtn');
-  var label = document.getElementById('vRunLabel');
-  btn.disabled = true;
-  label.textContent = 'A ANALISAR...';
-
-  // Fetch live prices for current positions
-  var currentPrices = {};
-  var tickers = Object.keys(vState.positions);
-  for (var t of tickers) {
-    var info = await fetchLivePrice(t);
-    if (info) currentPrices[t] = info.price;
-  }
-
-  // Build state summary for AI
-  var posStr = tickers.length > 0 ? tickers.map(function(t) {
-    var p = vState.positions[t];
-    var cur = currentPrices[t] || p.avgPrice;
-    var gain = ((cur - p.avgPrice) / p.avgPrice * 100).toFixed(1);
-    return t + ':' + p.units.toFixed(3) + 'un@PM' + p.avgPrice.toFixed(2) + '/cur' + cur.toFixed(2) + '(' + (gain>=0?'+':'') + gain + '%)';
-  }).join(' | ') : 'Nenhuma';
-
-  var logRecent = vState.log.slice(-5).map(function(l) {
-    return l.action + ' ' + l.ticker + ' ' + l.units + 'un@' + l.price;
-  }).join('; ') || 'Nenhuma';
-
-  var totalValue = vState.cash + tickers.reduce(function(sum, t) {
-    var p = vState.positions[t];
-    return sum + p.units * (currentPrices[t] || p.avgPrice);
-  }, 0);
-
-  var prompt = 'És um gestor de carteira AI autónomo chamado VAULT. Tens €' + vState.cash.toFixed(2) + ' em caixa de um orçamento total de €5000.\n\nPosições atuais: ' + posStr + '\nÚltimas decisões: ' + logRecent + '\nValor total atual: €' + totalValue.toFixed(2) + '\n\nAnalisa o mercado e toma UMA decisão concreta agora. Responde APENAS com JSON:\n{"action":"COMPRAR" ou "VENDER" ou "MANTER","ticker":"XXXXX","units":0.000,"price":0.00,"reasoning":"Explica em 2-3 frases porque tomaste esta decisão com dados de mercado reais.","strategy":"Estratégia geral da carteira em 1 frase."}\n\nRegras: COMPRAR só se cash >= units*price. Tickers UCITS válidos: VWCE,CSPX,IWDA,EQQQ,EXSA,VGWL,IBTC. Se MANTER, units=0 e price=0. Usa preços reais de hoje.';
-
-  try {
-    var response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
-        system: 'Gestor de carteira AI autónomo. Responde APENAS JSON válido, sem markdown, sem texto extra.',
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    var data = await response.json();
-    if (data.error) throw new Error(data.error.message);
-    var raw = data.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('').trim();
-    raw = raw.replace(/```json|```/g, '').trim();
-    var match = raw.match(/\{[\s\S]*\}/);
-    var decision = JSON.parse(match ? match[0] : raw);
-
-    // Fetch real price if available
-    var liveInfo = await fetchLivePrice(decision.ticker);
-    var execPrice = liveInfo ? liveInfo.price : decision.price;
-    var execName = liveInfo ? liveInfo.name : decision.ticker;
-    var execCurrency = liveInfo ? liveInfo.currency : 'EUR';
-
-    var now = new Date();
-    var dateStr = now.toLocaleDateString('pt-PT') + ' ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
-
-    if (decision.action === 'COMPRAR' && decision.units > 0 && execPrice > 0) {
-      var total = decision.units * execPrice;
-      if (total > vState.cash) {
-        // Adjust units to what we can afford
-        decision.units = Math.floor((vState.cash * 0.95) / execPrice * 1000) / 1000;
-        total = decision.units * execPrice;
-      }
-      if (decision.units > 0) {
-        vState.cash -= total;
-        if (vState.positions[decision.ticker]) {
-          var old = vState.positions[decision.ticker];
-          var newUnits = old.units + decision.units;
-          vState.positions[decision.ticker].avgPrice = (old.units * old.avgPrice + decision.units * execPrice) / newUnits;
-          vState.positions[decision.ticker].units = newUnits;
-        } else {
-          vState.positions[decision.ticker] = { units: decision.units, avgPrice: execPrice, name: execName, currency: execCurrency };
-        }
-        vState.log.unshift({ date: dateStr, action: '🟢 COMPRA', ticker: decision.ticker, units: decision.units.toFixed(3), price: execPrice.toFixed(2), total: total.toFixed(2), reason: decision.reasoning });
-      }
-    } else if (decision.action === 'VENDER' && decision.units > 0 && vState.positions[decision.ticker]) {
-      var pos = vState.positions[decision.ticker];
-      var sellUnits = Math.min(decision.units, pos.units);
-      var sellTotal = sellUnits * execPrice;
-      vState.cash += sellTotal;
-      pos.units -= sellUnits;
-      if (pos.units < 0.001) delete vState.positions[decision.ticker];
-      vState.log.unshift({ date: dateStr, action: '🔴 VENDA', ticker: decision.ticker, units: sellUnits.toFixed(3), price: execPrice.toFixed(2), total: sellTotal.toFixed(2), reason: decision.reasoning });
-    } else {
-      vState.log.unshift({ date: dateStr, action: '🟡 MANTER', ticker: decision.ticker || '—', units: '—', price: '—', total: '—', reason: decision.reasoning });
-    }
-
-    vState.decisions++;
-
-    // Update prices and record performance
-    var newTotal = vState.cash + Object.keys(vState.positions).reduce(function(sum, t) {
-      var p = vState.positions[t];
-      return sum + p.units * (t === decision.ticker ? execPrice : (currentPrices[t] || p.avgPrice));
-    }, 0);
-    vState.perfHistory.push({ date: now.toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'}), value: parseFloat(newTotal.toFixed(2)) });
-    if (vState.perfHistory.length > 30) vState.perfHistory = vState.perfHistory.slice(-30);
-
-    saveVirtual();
-
-    // Show reasoning
-    var reasonHtml = '<div style="margin-bottom:10px;">' +
-      '<strong style="color:var(--gold);">' + decision.action + ' ' + decision.ticker + '</strong>' +
-      '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);margin-left:10px;">' + dateStr + '</span>' +
-      '</div>' +
-      '<p style="margin-bottom:8px;">' + (decision.reasoning || '') + '</p>' +
-      (decision.strategy ? '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--gold);padding:8px 10px;background:var(--gold-dim);border-radius:6px;margin-top:8px;">Estratégia: ' + decision.strategy + '</div>' : '');
-    document.getElementById('vReasoning').innerHTML = reasonHtml;
-    document.getElementById('vLastUpdate').textContent = 'Última decisão: ' + dateStr;
-
-    renderVirtual();
-
-  } catch(e) {
-    document.getElementById('vReasoning').innerHTML = '<div style="color:var(--red);font-size:12px;">Erro: ' + (e.message||'desconhecido') + '</div>';
-  }
-
-  label.textContent = 'EXECUTAR DECISÃO AI';
-  btn.disabled = false;
+function logTransaction(action, ticker, units, price, platform) {
+  var now = new Date();
+  posHistory.unshift({
+    date: now.toISOString(),
+    dateStr: now.toLocaleDateString('pt-PT') + ' ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'}),
+    action: action,
+    ticker: ticker,
+    units: units,
+    price: price,
+    total: (units * price).toFixed(2),
+    platform: platform
+  });
+  savePosHistory();
 }
-
-function renderVirtual() {
-  // Recalc total with stored prices
-  var tickers = Object.keys(vState.positions);
-  var investedVal = tickers.reduce(function(sum, t) {
-    var p = vState.positions[t];
-    return sum + p.units * p.avgPrice;
-  }, 0);
-  var totalVal = vState.cash + investedVal;
-  var gain = totalVal - VIRTUAL_BUDGET;
-  var gainPct = (gain / VIRTUAL_BUDGET * 100);
-
-  document.getElementById('vTotalVal').textContent = '€' + totalVal.toFixed(2);
-  document.getElementById('vTotalChg').textContent = 'Início: €' + VIRTUAL_BUDGET.toFixed(0);
-  document.getElementById('vGainVal').textContent = (gain >= 0 ? '+' : '') + '€' + gain.toFixed(2);
-  document.getElementById('vGainVal').style.color = gain >= 0 ? 'var(--green)' : 'var(--red)';
-  document.getElementById('vGainPct').textContent = (gainPct >= 0 ? '▲ +' : '▼ ') + gainPct.toFixed(2) + '%';
-  document.getElementById('vGainPct').className = 'metric-change ' + (gain >= 0 ? 'up' : 'down');
-  document.getElementById('vCashVal').textContent = '€' + vState.cash.toFixed(2);
-  document.getElementById('vDecisions').textContent = vState.decisions + ' decisão' + (vState.decisions !== 1 ? 'ões' : '') + ' tomada' + (vState.decisions !== 1 ? 's' : '');
-
-  // Positions list
-  var list = document.getElementById('vPositionsList');
-  document.getElementById('vPosCount').textContent = tickers.length + ' posição' + (tickers.length !== 1 ? 'ões' : '');
-  if (tickers.length === 0) {
-    list.innerHTML = '<div style="padding:24px;text-align:center;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);">Sem posições abertas</div>';
-    document.getElementById('vAllocWrap').innerHTML = '';
-  } else {
-    var colors = ['#c9a84c','#4caf7d','#f7931a','#e05c5c','#9a9890','#5a9dd6'];
-    list.innerHTML = tickers.map(function(t, i) {
-      var p = vState.positions[t];
-      var val = p.units * p.avgPrice;
-      var pct = totalVal > 0 ? (val / totalVal * 100) : 0;
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);gap:8px;">' +
-        '<div style="flex:1;min-width:0;">' +
-          '<div style="display:flex;align-items:center;gap:6px;">' +
-            '<div style="width:8px;height:8px;border-radius:50%;background:' + colors[i%colors.length] + ';flex-shrink:0;"></div>' +
-            '<span style="font-family:\'DM Mono\',monospace;font-size:13px;color:var(--gold);">' + t + '</span>' +
-          '</div>' +
-          '<div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p.name || t) + '</div>' +
-          '<div style="font-size:11px;color:var(--text3);">' + p.units.toFixed(3) + ' un · PM: ' + p.avgPrice.toFixed(2) + '</div>' +
-        '</div>' +
-        '<div style="text-align:right;flex-shrink:0;">' +
-          '<div style="font-family:\'DM Serif Display\',serif;font-size:14px;">€' + val.toFixed(2) + '</div>' +
-          '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);">' + pct.toFixed(0) + '% carteira</div>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-
-    // Alloc bar
-    var allocHtml = '<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-bottom:8px;">';
-    tickers.forEach(function(t, i) {
-      var p = vState.positions[t];
-      var pct = totalVal > 0 ? (p.units * p.avgPrice / totalVal * 100) : 0;
-      allocHtml += '<div style="width:' + pct.toFixed(1) + '%;background:' + colors[i%colors.length] + ';"></div>';
-    });
-    // Cash bar
-    var cashPct = totalVal > 0 ? (vState.cash / totalVal * 100) : 100;
-    allocHtml += '<div style="flex:1;background:var(--border2);"></div></div>';
-    allocHtml += '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-      tickers.map(function(t, i) {
-        return '<span style="font-family:\'DM Mono\',monospace;font-size:9px;color:' + colors[i%colors.length] + ';">■ ' + t + '</span>';
-      }).join('') +
-      '<span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);">■ Cash ' + cashPct.toFixed(0) + '%</span>' +
-      '</div>';
-    document.getElementById('vAllocWrap').innerHTML = allocHtml;
-  }
-
-  // Decision log
-  var logEl = document.getElementById('vDecisionLog');
-  if (vState.log.length === 0) {
-    logEl.innerHTML = '<div style="padding:24px;text-align:center;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);">Sem decisões ainda</div>';
-  } else {
-    logEl.innerHTML = vState.log.slice(0,20).map(function(l) {
-      var isCompra = l.action.includes('COMPRA');
-      var isVenda = l.action.includes('VENDA');
-      var borderColor = isCompra ? 'var(--green)' : isVenda ? 'var(--red)' : 'var(--gold)';
-      return '<div style="padding:10px 14px;border-bottom:1px solid var(--border);border-left:2px solid ' + borderColor + ';">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
-          '<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text);">' + l.action + ' <strong style="color:var(--gold)">' + l.ticker + '</strong></span>' +
-          '<span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);">' + l.date + '</span>' +
-        '</div>' +
-        (l.units !== '—' ? '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);">' + l.units + ' un @ €' + l.price + ' = €' + l.total + '</div>' : '') +
-        '<div style="font-size:11px;color:var(--text2);margin-top:4px;">' + (l.reason || '') + '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  // Performance chart
-  renderVirtualChart();
-}
-
-function renderVirtualChart() {
-  var hist = vState.perfHistory;
-  var chartEl = document.getElementById('vPerfChart');
-  var labelsEl = document.getElementById('vPerfLabels');
-  if (hist.length < 2) {
-    chartEl.innerHTML = '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);margin:auto;">Sem histórico ainda — executa pelo menos 2 decisões</div>';
-    labelsEl.innerHTML = '';
-    return;
-  }
-  var maxVal = Math.max.apply(null, hist.map(function(h){ return h.value; }));
-  var minVal = Math.min.apply(null, hist.map(function(h){ return h.value; }));
-  var range = maxVal - minVal || 1;
-  var bars = hist.map(function(h, i) {
-    var heightPct = ((h.value - minVal) / range * 70 + 10);
-    var isGain = h.value >= VIRTUAL_BUDGET;
-    var color = isGain ? 'var(--green)' : 'var(--red)';
-    var isLast = i === hist.length - 1;
-    return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;" title="€' + h.value + '">' +
-      '<div style="height:' + heightPct + '%;background:' + color + ';border-radius:2px 2px 0 0;opacity:' + (isLast ? '1' : '0.6') + ';transition:height 0.4s ease;"></div>' +
-    '</div>';
-  }).join('');
-  chartEl.innerHTML = bars;
-  // Show every 5th label
-  var labels = hist.map(function(h, i) {
-    return (i % Math.max(1, Math.floor(hist.length / 6)) === 0 || i === hist.length-1)
-      ? '<span>' + h.date + '</span>' : '<span></span>';
-  }).join('');
-  labelsEl.innerHTML = labels;
-}
-
-// Init virtual on load
-renderVirtual();
 
 // ── WORKER URL CONFIG ──
 function saveWorkerUrl() {
@@ -2672,10 +2345,12 @@ var YAHOO_MAP = {
   VGWL: 'VGWL.DE', VGWD: 'VGWD.DE', MEUD: 'MEUD.DE',
   EXXT: 'EXXT.DE', SPPW: 'SPPW.DE', SPYW: 'SPYW.DE',
   XDWD: 'XDWD.DE', XDWL: 'XDWL.DE', DBXD: 'DBXD.DE',
+  '4GLD': '4GLD.DE', WGLD: 'WGLD.DE',
   // ETFs UCITS — London (L)
   CSPX: 'CSPX.L', IWDA: 'IWDA.L', EQQQ: 'EQQQ.L',
   AGGH: 'AGGH.L', IGLN: 'IGLN.L', IEMA: 'IEMA.L',
   SWRD: 'SWRD.L', SAWD: 'SAWD.L', HMWD: 'HMWD.L',
+  SGLN: 'SGLN.L', PPFB: 'PPFB.L', ZSGL: 'ZSGL.L',
   // ETFs UCITS — Amsterdam (AS)
   IWDA_AS: 'IWDA.AS', EMIM: 'EMIM.AS', IUSQ: 'IUSQ.AS',
   // Crypto
@@ -2729,12 +2404,31 @@ async function fetchLivePrice(ticker) {
   return null;
 }
 
-// ── Multi-turn helper for Anthropic API (handles tool_use) ──
+// ── Simple Claude API call (no web_search — avoids rate limits) ──
+async function claudeCall(messages, system, maxTokens) {
+  maxTokens = maxTokens || 600;
+  var body = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: maxTokens,
+    messages: messages
+  };
+  if (system) body.system = system;
+  var response = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  var data = await response.json();
+  if (data.error) throw new Error(data.error.message || 'API error');
+  return data.content.filter(function(b){ return b.type === 'text'; }).map(function(b){ return b.text; }).join('');
+}
+
+// ── Multi-turn with web_search (only for Agente AI chat page) ──
 async function claudeMultiTurn(messages, maxTokens) {
-  maxTokens = maxTokens || 1200;
+  maxTokens = maxTokens || 1000;
   var msgs = messages.slice();
   var iterations = 0;
-  while (iterations < 6) {
+  while (iterations < 5) {
     iterations++;
     var response = await fetch(PROXY_URL, {
       method: 'POST',
@@ -2758,9 +2452,7 @@ async function claudeMultiTurn(messages, maxTokens) {
         { role: 'user', content: toolResults }
       ]);
     } else {
-      // end_turn — extract text
-      var text = content.filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('\n');
-      return text;
+      return content.filter(function(b){ return b.type === 'text'; }).map(function(b){ return b.text; }).join('');
     }
   }
   throw new Error('Demasiadas iterações');
@@ -2777,10 +2469,6 @@ async function refreshAllPrices() {
     }
   }
   renderCarteira();
-}
-
-function savePositions() {
-  localStorage.setItem('vault_positions', JSON.stringify(positions));
 }
 
 function openAddPosition() {
@@ -2916,10 +2604,11 @@ async function savePosition() {
     positions.push({
       ticker: ticker, units: units, avgPrice: avgPrice, platform: platform,
       name: LIVE_INFO[ticker] ? LIVE_INFO[ticker].name : ticker,
-      currency: LIVE_INFO[ticker] ? LIVE_INFO[ticker].currency : '€',
+      currency: LIVE_INFO[ticker] ? LIVE_INFO[ticker].currency : 'EUR',
       addedAt: new Date().toISOString()
     });
   }
+  logTransaction('COMPRA', ticker, units, avgPrice, platform);
   savePositions();
   closeModal();
   renderCarteira();
@@ -2927,7 +2616,9 @@ async function savePosition() {
 }
 
 function deletePosition(idx) {
-  if (confirm('Remover esta posição?')) {
+  var p = positions[idx];
+  if (confirm('Remover ' + p.ticker + ' (' + p.units.toFixed(3) + ' un)?')) {
+    logTransaction('VENDA', p.ticker, p.units, CURRENT_PRICES[p.ticker] || p.avgPrice, p.platform);
     positions.splice(idx, 1);
     savePositions();
     renderCarteira();
@@ -3040,6 +2731,34 @@ function renderCarteira() {
   });
   allocHtml += '</div>';
   allocDiv.innerHTML = allocHtml;
+
+  // ── Transaction History ──
+  var histList = document.getElementById('historyList');
+  var histCountEl = document.getElementById('histCount');
+  if (!histList) return;
+  histCountEl.textContent = posHistory.length + ' transaç' + (posHistory.length === 1 ? 'ão' : 'ões');
+  if (posHistory.length === 0) {
+    histList.innerHTML = '<div style="padding:20px;text-align:center;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3);">Sem transações ainda.</div>';
+  } else {
+    histList.innerHTML = posHistory.map(function(h) {
+      var isCompra = h.action === 'COMPRA';
+      var col = isCompra ? 'var(--green)' : 'var(--red)';
+      var icon = isCompra ? '🟢' : '🔴';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid var(--border);gap:8px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">' +
+          '<span style="font-size:13px;">' + icon + '</span>' +
+          '<div>' +
+            '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:' + col + ';">' + h.action + ' <strong style="color:var(--gold)">' + h.ticker + '</strong></div>' +
+            '<div style="font-size:10px;color:var(--text3);margin-top:1px;">' + h.dateStr + ' · ' + (h.platform || '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;">' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:11px;">' + parseFloat(h.units).toFixed(3) + ' un @ ' + parseFloat(h.price).toFixed(2) + '</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3);">€' + h.total + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
 }
 
 async function analyseCarteira() {
@@ -3064,20 +2783,11 @@ async function analyseCarteira() {
   var prompt = 'Sou investidor PT. Carteira: ' + posStr + '. Para cada posição diz MANTER🟢 REFORÇAR🔵 ou VENDER🔴 com motivo curto. Depois: diversificação ok? ação esta semana? Responde em PT, máx 300 palavras.';
 
   try {
-    // Simple single request — NO web_search to avoid token accumulation
-    var response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 600,
-        system: 'És o VAULT, advisor privado de investimentos para Portugal. Análises educativas, não aconselhamento financeiro regulado. Responde sempre em português de Portugal.',
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    var data = await response.json();
-    if (data.error) throw new Error(data.error.message);
-    var text = data.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
+    var text = await claudeCall(
+      [{ role: 'user', content: prompt }],
+      'VAULT advisor PT. Análises educativas, não aconselhamento financeiro regulado. Responde sempre em português de Portugal.',
+      700
+    );
     carteiraChatHistory = [
       { role: 'user', content: prompt },
       { role: 'assistant', content: text }
@@ -3131,19 +2841,11 @@ async function sendCarteiraQ(msg) {
     : [{ role: 'user', content: 'Carteira PT: ' + posStr + '. ' + msg }];
 
   try {
-    var response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
-        system: 'VAULT advisor PT. Carteira do utilizador: ' + posStr + '. Responde em PT, direto, máx 150 palavras.',
-        messages: allMsgs
-      })
-    });
-    var data = await response.json();
-    if (data.error) throw new Error(data.error.message);
-    var text = data.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
+    var text = await claudeCall(
+      allMsgs,
+      'VAULT advisor PT. Carteira: ' + posStr + '. Responde em PT, direto, máx 150 palavras.',
+      400
+    );
 
     // Update history keeping it short
     carteiraChatHistory = allMsgs.concat([{ role: 'assistant', content: text }]);
@@ -3197,51 +2899,35 @@ function fetchInsights() {
     '<div class="insight-skeleton"></div>' +
     '</div>';
 
-  // Use multi-turn to handle web_search tool_use blocks properly
-  var messages = [{ role: 'user', content: INSIGHTS_PROMPT }];
-
-  function doRequest(msgs) {
-    return fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
-        system: 'Advisor investimentos PT. Responde sempre em português de Portugal.',
-        messages: msgs
-      })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.error) throw new Error(data.error.message || 'API error');
-      var content = data.content || [];
-      var raw = content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
-      if (!raw.trim()) throw new Error('Resposta vazia');
-      raw = raw.replace(/```json|```/g, '').trim();
-      var parsed;
-      try {
-        var match = raw.match(/\{[\s\S]*\}/);
-        parsed = JSON.parse(match ? match[0] : raw);
-      } catch(e) {
-        // fallback: show as plain insight
-        container.innerHTML = '<div class="insight neutral"><div class="insight-header">◎ Análise do Mercado</div><div class="insight-text">' + raw.replace(/\n/g,'<br>') + '</div></div>';
-        var now = new Date();
-        timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
-        resetCountdown();
-        return;
-      }
-      var html = '';
-      parsed.insights.forEach(function(ins) {
-        html += '<div class="insight ' + ins.type + '" style="animation:fadeUp 0.4s ease;"><div class="insight-header">' + ins.header + '</div><div class="insight-text">' + ins.text + '</div></div>';
-      });
-      container.innerHTML = html;
+  // Use claudeCall (no web_search — avoids rate limits)
+  claudeCall(
+    [{ role: 'user', content: INSIGHTS_PROMPT }],
+    'Advisor investimentos PT. Responde sempre em português de Portugal.',
+    400
+  )
+  .then(function(raw) {
+    if (!raw.trim()) throw new Error('Resposta vazia');
+    raw = raw.replace(/```json|```/g, '').trim();
+    var parsed;
+    try {
+      var match = raw.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(match ? match[0] : raw);
+    } catch(e) {
+      container.innerHTML = '<div class="insight neutral"><div class="insight-header">◎ Análise do Mercado</div><div class="insight-text">' + raw.replace(/\n/g,'<br>') + '</div></div>';
       var now = new Date();
-      timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}) + ' · Próxima em 60 min';
+      timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
       resetCountdown();
+      return;
+    }
+    var html = '';
+    parsed.insights.forEach(function(ins) {
+      html += '<div class="insight ' + ins.type + '" style="animation:fadeUp 0.4s ease;"><div class="insight-header">' + ins.header + '</div><div class="insight-text">' + ins.text + '</div></div>';
     });
-  }
-
-  doRequest(messages)
+    container.innerHTML = html;
+    var now = new Date();
+    timestamp.textContent = 'Atualizado às ' + now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}) + ' · Próxima em 60 min';
+    resetCountdown();
+  })
   .catch(function(err) {
     console.error('Insights error:', err);
     container.innerHTML = '<div class="insight bearish"><div class="insight-header">⚠️ Erro ao carregar</div>' +
@@ -3345,19 +3031,11 @@ async function vRunAgent() {
   label.textContent = 'A DECIDIR...';
 
   try {
-    var response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 600,
-        system: 'Gestor de fundos AI. Decisões de investimento educativas, não aconselhamento financeiro regulado.',
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    var data = await response.json();
-    if (data.error) throw new Error(data.error.message);
-    var raw = data.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    var raw = await claudeCall(
+      [{ role: 'user', content: prompt }],
+      'Gestor de fundos AI. Decisões educativas, não aconselhamento financeiro regulado.',
+      600
+    );
     raw = raw.replace(/```json|```/g,'').trim();
     var match = raw.match(/\{[\s\S]*\}/);
     var parsed = JSON.parse(match ? match[0] : raw);
